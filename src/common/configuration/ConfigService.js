@@ -22,7 +22,10 @@
           }
           var configCopy = $.extend(true, {}, config);
           var proxy = service_.configuration.proxy;
-          if (goog.isDefAndNotNull(proxy)) {
+          var localDomain = $location.protocol() + '://' + $location.host();
+          var serviceDomain = configCopy.url.split('/geoserver/wms')[0];
+          // Don't use a proxy if the geoserver is local
+          if (goog.isDefAndNotNull(proxy) && localDomain != serviceDomain) {
             configCopy.url = proxy + encodeURIComponent(configCopy.url);
           }
           return configCopy;
