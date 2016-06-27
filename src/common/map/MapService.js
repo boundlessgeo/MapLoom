@@ -716,17 +716,39 @@
                   '</wfs:Transaction>';
 
               var wfsurl = mostSpecificUrl + '/wfs/WfsDispatcher';
-              httpService_.post(wfsurl, wfsRequestData).success(function(data, status, headers, config) {
+
+              function _buildHeaders(xhr) {
+                if (goog.isDefAndNotNull(server.authentication)) {
+                  xhr.setRequestHeader('Authorization', 'Basic ' + server.authentication);
+                } else {
+                  return;
+                }
+              }
+
+              function _handlePostResponse(data) {
                 var x2js = new X2JS();
-                var json = x2js.xml_str2json(data);
+                var json = x2js.xml2json(data);
                 if (goog.isDefAndNotNull(json.ServiceExceptionReport) &&
                     goog.isDefAndNotNull(json.ServiceExceptionReport.ServiceException) &&
                     json.ServiceExceptionReport.ServiceException.indexOf('read-only') >= 0) {
                 } else {
                   layer.get('metadata').readOnly = false;
                 }
-              }).error(function(data, status, headers, config) {
+              }
+
+              $.ajax({
+                url: wfsurl,
+                beforeSend: _buildHeaders,
+                type: 'POST',
+                dataType: 'xml',
+                contentType: 'text/html',
+                processData: false,
+                data: wfsRequestData,
+                success: _handlePostResponse,
+                error: function() {
+                }
               });
+
             };
             geogigService_.isGeoGig(layer, server, fullConfig).then(function() {
               testReadOnly();
