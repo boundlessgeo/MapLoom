@@ -631,7 +631,6 @@ var SERVER_SERVICE_USE_PROXY = true;
         LayerId: layerInfo.LayerId,
         CRS: ['EPSG:4326'],
         detail_url: configService_.configuration.registryUrl + '/layer/' + layerInfo.LayerId,
-        thumbnail_url: layerInfo.ThumbnailURL ? (configService_.configuration.registryUrl + layerInfo.ThumbnailURL) : null,
         author: author(layerInfo),
         domain: domain(layerInfo),
         type: 'mapproxy_tms',
