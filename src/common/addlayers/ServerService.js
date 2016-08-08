@@ -221,14 +221,15 @@ var SERVER_SERVICE_USE_PROXY = true;
     };
 
     this.getWfsRequestUrl = function(url) {
-      var wfsurl = null;
-      var server = service_.getServerByUrl(url);
-      url = goog.isDefAndNotNull(server) ? service_.getMostSpecificUrl(server) : url;
+      var wfsurl;
       var currentDomain = locationService_.host();
       if (goog.isDefAndNotNull(url)) {
+        if (url.indexOf('/wms') > -1) {
+          var splitUrl = url.split('/wms');
+          url = splitUrl[0];
+        }
         if (url.indexOf(currentDomain) > -1) {
           wfsurl = location.protocol + '//' + location.host + '/wfsproxy/';
-          return wfsurl;
         }
       }
       wfsurl = url + '/wfs/WfsDispatcher';
@@ -245,7 +246,7 @@ var SERVER_SERVICE_USE_PROXY = true;
 
       var currentDomain = locationService_.host();
       var serverUrl = service_.getMostSpecificUrl(server);
-      headers['Content-Type'] = 'application/xml';
+      headers['Content-Type'] = 'text/html';
       if (goog.isDefAndNotNull(server.authentication)) {
         headers['Authorization'] = 'Basic ' + server.authentication;
       }
@@ -951,7 +952,6 @@ var SERVER_SERVICE_USE_PROXY = true;
         } else {
           config.headers['Authorization'] = '';
         }
-        // server hasn't been added yet, so specify the auth headers here
         http_.get(url_getcaps, config).then(function(xhr) {
           if (xhr.status === 200) {
             var response = parser.read(xhr.data);

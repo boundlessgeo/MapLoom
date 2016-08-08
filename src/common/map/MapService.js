@@ -829,7 +829,6 @@
               }
 
               var wfsReqConfig = {
-                withCredentials: true
               };
               wfsReqConfig.headers = serverService_.getWfsRequestHeaders(server);
 
