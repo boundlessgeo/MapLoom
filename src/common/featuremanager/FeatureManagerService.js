@@ -913,7 +913,7 @@
       var deferredResponse = q_.defer();
 
       // Convert BIKE_TRAFD from the user-friendly value to the database value
-      if (selectedLayer_.get('metadata').name.includes('bikepath')) {
+      if ((save || inserting) && selectedLayer_.get('metadata').name.includes('bikepath')) {
         goog.array.forEach(properties, function(property, index) {
           if (property[0] === 'BIKE_TRAFD') {
             var dbValue = '';
