@@ -338,7 +338,7 @@
                   bikeDirValue = 'Against';
                   break;
                 default:
-                  bikeDirValue = '';
+                  bikeDirValue = selectedItem_.properties['BIKE_TRAFD'];
                   break;
               }
 
