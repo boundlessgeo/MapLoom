@@ -380,7 +380,8 @@
     'bounding_box' : 'Bounding Box',
     'pin_feature' : 'Pin Feature',
     'unpin_feature' : 'Unpin Feature',
-    'pinned_search' : 'Pinned Search'
+    'pinned_search' : 'Pinned Search',
+    'comment_acknowledge': 'I acknowledge that my comment goes to a queue and won\'t appear on the map until approved by PPACG staff'
   };
 
   var module = angular.module('loom_translations_en', ['pascalprecht.translate']);

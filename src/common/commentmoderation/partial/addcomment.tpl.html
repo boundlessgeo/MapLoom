@@ -16,9 +16,16 @@
         <select ng-model="model.category" ng-options="category.label for category in categoryOptions"></select>
       </div>
     </div>
+    <div class="form-group" style="padding-left: 15px;">
+        <label><input type="checkbox" ng-model="model.acknowledged" style="margin-right: 5px;"/>
+          {{'comment_acknowledge' | translate}}
+        </label>
+    </div>
   </form>
   <div class="modal-footer">
     <button type="button" class="btn btn-default" ng-click="cancel()">{{'cancel_btn' | translate}}</button>
-    <button type="button" class="btn btn-primary" ng-click="submit()">{{'submit_btn' | translate}}</button>
+    <button type="button" class="btn btn-primary" ng-click="model.acknowledged && submit()"
+            ng-class="{disabled: !model.acknowledged}"
+            ng-disabled="!model.acknowledged">{{'submit_btn' | translate}}</button>
   </div>
 </div>

@@ -26,7 +26,8 @@
             scope.model = {
               message: '',
               title: '',
-              category: scope.categoryOptions[8]
+              category: scope.categoryOptions[8],
+              acknowledged: false
             };
 
 
@@ -54,6 +55,10 @@
             scope.cancel = function() {
               element.closest('.modal').modal('hide');
               scope.isLoading = false;
+              scope.model.message = '';
+              scope.model.title = '';
+              scope.category = scope.categoryOptions[8];
+              scope.acknowledged = false;
             };
 
             scope.submit = function() {

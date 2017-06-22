@@ -372,7 +372,8 @@
     'username' : 'Username',
     'add_comment' : 'Add Comment',
     'comments_enabled' : 'Comments Enabled',
-    'bounding_box' : 'Cuadro Delimitador'
+    'bounding_box' : 'Cuadro Delimitador',
+    'comment_acknowledge': 'I acknowledge that my comment goes to a queue and won\'t appear on the map until approved by PPACG staff'
   };
 
   var module = angular.module('loom_translations_es', ['pascalprecht.translate']);
