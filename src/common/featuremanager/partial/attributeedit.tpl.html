@@ -8,7 +8,7 @@
     <div class="form-group" ng-repeat="prop in properties"
          ng-init="readonly = (((featureManagerService.getSelectedLayer().get('metadata').name.toLowerCase().includes('bikepath') &&
                                 (prop[0].toLowerCase() === 'street' || prop[0].toLowerCase() === 'segmentid' || prop[0].toLowerCase() === 'physicalid' ||
-                                 prop[0].toLowerCase() === 'bikedir' || prop[0].toLowerCase() === 'fromstreet' || prop[0].toLowerCase() === 'tostreet' ||
+                                 prop[0].toLowerCase() === 'bike_trafd' || prop[0].toLowerCase() === 'fromstreet' || prop[0].toLowerCase() === 'tostreet' ||
                                  prop[0].toLowerCase() === 'gid' || prop[0].toLowerCase() === 'seqnum' || prop[0].toLowerCase() === 'nodeidfrom' || prop[0].toLowerCase() === 'nodeidto')) ||
                                (featureManagerService.getSelectedLayer().get('metadata').name.toLowerCase().includes('building') &&
                                 (prop[0].toLowerCase() !== 'name' && prop[0].toLowerCase() !== 'cnstrct_yr' && prop[0].toLowerCase() !== 'num_floors'))));

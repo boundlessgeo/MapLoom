@@ -330,7 +330,7 @@
                   from = property[1];
                 } else if (property[0] === 'toFromcl') {
                   to = property[1];
-                } else if (property[0] === 'BikeDir') {
+                } else if (property[0] === 'BIKE_TRAFD') {
                   bikeDir = property;
                 }
               });

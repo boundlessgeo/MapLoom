@@ -53,9 +53,9 @@
               ng-show="isAttributeVisible(attr.name)"
               ng-init="readonly =((selectedLayer.toLowerCase().includes('bikepath') &&
                                    (attr.name.toLowerCase() === 'street' || attr.name.toLowerCase() === 'segmentid' || attr.name.toLowerCase() === 'physicalid' ||
-                                    attr.name.toLowerCase() === 'bikedir' || attr.name.toLowerCase() === 'fromstreet' || attr.name.toLowerCase() === 'tostreet' ||
-                                    attr.name.toLowerCase() === 'gid' || attr.name.toLowerCase() === 'seqnum' || attr.name.toLowerCase() === 'nodeidfrom' || 
-                                    attr.name.toLowerCase() === 'nodeidto')) || (selectedLayer.toLowerCase().includes('building') && (attr.name.toLowerCase() !== 'name' && 
+                                    attr.name.toLowerCase() === 'bike_trafd' || attr.name.toLowerCase() === 'fromstreet' || attr.name.toLowerCase() === 'tostreet' ||
+                                    attr.name.toLowerCase() === 'gid' || attr.name.toLowerCase() === 'seqnum' || attr.name.toLowerCase() === 'nodeidfrom' ||
+                                    attr.name.toLowerCase() === 'nodeidto')) || (selectedLayer.toLowerCase().includes('building') && (attr.name.toLowerCase() !== 'name' &&
                                     attr.name.toLowerCase() !== 'cnstrct_yr' && attr.name.toLowerCase() !== 'num_floors')));
                        cellName = row.feature.id + '-' + attr.name";>
             <div ng-switch on="restrictions[attr.name].type" ng-class="{'wide-table-element': advFilters}">

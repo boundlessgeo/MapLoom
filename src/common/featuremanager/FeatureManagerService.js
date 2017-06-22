@@ -320,8 +320,8 @@
 
           selectedLayer_ = this.getSelectedItemLayer().layer;
 
-          if (selectedLayer_.get('metadata').name.includes('bikepath') && (!selectedItem_.properties['BikeDir'] || selectedItem_.properties['BikeDir'] === '')) {
-            selectedItem_.properties['BikeDir'] = this.calculateBikeDirection(selectedItem_.properties['toFromcl'], selectedItem_.properties['fromTocl']);
+          if (selectedLayer_.get('metadata').name.includes('bikepath') && (!selectedItem_.properties['BIKE_TRAFD'] || selectedItem_.properties['BIKE_TRAFD'] === '')) {
+            selectedItem_.properties['BIKE_TRAFD'] = this.calculateBikeDirection(selectedItem_.properties['toFromcl'], selectedItem_.properties['fromTocl']);
           }
 
           // note that another service may make a fake feature selection on a layer not in mapservice.
@@ -987,7 +987,7 @@
     this.getFieldMappings = function(layer) {
       var mapping = {
         'bikepath': {
-          'BikeDir': 'Bike Direction',
+          'BIKE_TRAFD': 'Bike Direction',
           'BikeRtCond': 'Bike Route Conditions',
           'FromStreet': 'From-Street',
           'Impediment': 'Impediments',

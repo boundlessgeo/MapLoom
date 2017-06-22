@@ -522,7 +522,7 @@
 
                 // Find the bike direction field corresponding to the particular row and update its value
                 for (var i in scope.tableviewform.$editables) {
-                  if (scope.tableviewform.$editables[i].name === (featureId + '-BikeDir')) {
+                  if (scope.tableviewform.$editables[i].name === (featureId + '-BIKE_TRAFD')) {
                     scope.tableviewform.$editables[i].scope.$data = bikeDir;
                     break;
                   }

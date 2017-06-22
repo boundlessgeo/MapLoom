@@ -424,8 +424,8 @@
         getRestrictions();
         for (var feat in data.features) {
           var feature = data.features[feat];
-          if (metadata.name.includes('bikepath') && (!feature.properties['BikeDir'] || feature.properties['BikeDir'] === '')) {
-            feature.properties['BikeDir'] = service_.calculateBikeDirection(feature.properties['toFromcl'], feature.properties['fromTocl']);
+          if (metadata.name.includes('bikepath') && (!feature.properties['BIKE_TRAFD'] || feature.properties['BIKE_TRAFD'] === '')) {
+            feature.properties['BIKE_TRAFD'] = service_.calculateBikeDirection(feature.properties['toFromcl'], feature.properties['fromTocl']);
           }
 
           var selectedFeature = false;
