@@ -424,8 +424,30 @@
         getRestrictions();
         for (var feat in data.features) {
           var feature = data.features[feat];
-          if (metadata.name.includes('bikepath') && (!feature.properties['BIKE_TRAFD'] || feature.properties['BIKE_TRAFD'] === '')) {
-            feature.properties['BIKE_TRAFD'] = service_.calculateBikeDirection(feature.properties['toFromcl'], feature.properties['fromTocl']);
+          if (metadata.name.includes('bikepath')) {
+            // If there isn't a BIKE_TRAFD value, calculate it. Otherwise, convert the database value to a user-friendly value.
+            if (!feature.properties['BIKE_TRAFD'] || feature.properties['BIKE_TRAFD'] === '') {
+              feature.properties['BIKE_TRAFD'] = service_.calculateBikeDirection(feature.properties['toFromcl'], feature.properties['fromTocl']);
+            } else {
+              var bikeDirValue = '';
+
+              switch (feature.properties['BIKE_TRAFD']) {
+                case 'TW':
+                  bikeDirValue = 'Two-way';
+                  break;
+                case 'FT':
+                  bikeDirValue = 'With';
+                  break;
+                case 'TF':
+                  bikeDirValue = 'Against';
+                  break;
+                default:
+                  bikeDirValue = '';
+                  break;
+              }
+
+              feature.properties['BIKE_TRAFD'] = bikeDirValue;
+            }
           }
 
           var selectedFeature = false;

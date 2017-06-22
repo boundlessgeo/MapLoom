@@ -320,8 +320,30 @@
 
           selectedLayer_ = this.getSelectedItemLayer().layer;
 
-          if (selectedLayer_.get('metadata').name.includes('bikepath') && (!selectedItem_.properties['BIKE_TRAFD'] || selectedItem_.properties['BIKE_TRAFD'] === '')) {
-            selectedItem_.properties['BIKE_TRAFD'] = this.calculateBikeDirection(selectedItem_.properties['toFromcl'], selectedItem_.properties['fromTocl']);
+          if (selectedLayer_.get('metadata').name.includes('bikepath')) {
+            // If there isn't a BIKE_TRAFD value, calculate it. Otherwise, convert the database value to a user-friendly value.
+            if (!selectedItem_.properties['BIKE_TRAFD'] || selectedItem_.properties['BIKE_TRAFD'] === '') {
+              selectedItem_.properties['BIKE_TRAFD'] = this.calculateBikeDirection(selectedItem_.properties['toFromcl'], selectedItem_.properties['fromTocl']);
+            } else {
+              var bikeDirValue = '';
+
+              switch (selectedItem_.properties['BIKE_TRAFD']) {
+                case 'TW':
+                  bikeDirValue = 'Two-way';
+                  break;
+                case 'FT':
+                  bikeDirValue = 'With';
+                  break;
+                case 'TF':
+                  bikeDirValue = 'Against';
+                  break;
+                default:
+                  bikeDirValue = '';
+                  break;
+              }
+
+              selectedItem_.properties['BIKE_TRAFD'] = bikeDirValue;
+            }
           }
 
           // note that another service may make a fake feature selection on a layer not in mapservice.
@@ -889,6 +911,31 @@
 
     this.endAttributeEditing = function(save, inserting, properties, coords) {
       var deferredResponse = q_.defer();
+
+      // Convert BIKE_TRAFD from the user-friendly value to the database value
+      if (selectedLayer_.get('metadata').name.includes('bikepath')) {
+        goog.array.forEach(properties, function(property, index) {
+          if (property[0] === 'BIKE_TRAFD') {
+            var dbValue = '';
+            switch (property[1]) {
+              case 'Two-way':
+                dbValue = 'TW';
+                break;
+              case 'With':
+                dbValue = 'FT';
+                break;
+              case 'Against':
+                dbValue = 'TF';
+                break;
+              default:
+                dbValue = '';
+                break;
+            }
+            property[1] = dbValue;
+          }
+        });
+      }
+
       if (inserting) {
         // create request
         service_.endFeatureInsert(save, properties, coords).then(function(resolve) {
