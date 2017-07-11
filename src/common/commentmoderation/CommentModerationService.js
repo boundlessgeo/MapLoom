@@ -101,7 +101,8 @@
           mapService.commentsEnabled = resp.data.enabled;
           if (this.commentsEnabled) {
             this.vectorLayer = new ol.layer.Vector({source: this.vectorSource, metadata: {
-              title: 'Comments', uniqueID: 'comments', config: {}, bbox: {crs: mapService.map.getView().getProjection()}},
+              title: 'Comments', uniqueID: 'comments',
+              bbox: {crs: mapService.map.getView().getProjection()}},
                         style: style
             });
             mapService.map.addLayer(this.vectorLayer);
