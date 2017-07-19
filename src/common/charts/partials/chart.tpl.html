@@ -1,0 +1,25 @@
+<div ng-show="template === 'chart'">
+    <div ng-show="editable">
+        <label>
+            Layer
+            <select ng-model="model.layerSelected">
+                <option ng-repeat="layer in layers" value={{layer.get('metadata').uniqueID}}>
+                    {{layer.get('metadata').title}}
+                </option>
+            </select>
+        </label>
+        <label>
+            Attribute
+            <select ng-model="model.attributeSelected" ng-options="val.name for val in model.availableAttributes">
+            </select>
+        </label>
+
+    </div>
+    <div>
+        <h4>{{model.attributeSelected.name}}</h4>
+        <div id="statistics-chart-area">
+            <div id="loom-statistics-legend"></div>
+            <div loom-statistics-chart id="loom-statistics-chart"></div>
+        </div>
+    </div>
+</div>

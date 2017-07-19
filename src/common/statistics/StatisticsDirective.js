@@ -126,8 +126,10 @@
             };
 
             scope.resetVariables = function() {
-              scope.divWidth = 550;
-              scope.divHeight = 450;
+              if (!scope.overrideDimensions) {
+                scope.divWidth = 550;
+                scope.divHeight = 450;
+              }
               scope.margin = {top: 30, bottom: 10, left: 45, right: 10};
               scope.uniqueValueMin = null;
               scope.uniqueValueMax = null;
@@ -191,6 +193,10 @@
               var yAxis = d3.svg.axis()
                   .scale(yScale)
                   .orient('left');
+
+              if (scope.overrideYTicks) {
+                yAxis.ticks(scope.overrideYTicks);
+              }
 
               svg.append('g')
                   .attr('class', 'y axis')
@@ -357,9 +363,17 @@
                   .append('div')
                   .attr('class', 'statistics-legend');
 
+              if (scope.legendHeight) {
+                element.find('.statistics-legend').css('height', scope.legendHeight);
+              }
+
               var legend = legendDiv
                   .append('table')
                   .attr('class', 'statistics-legend-table');
+
+              if (scope.legendHeight) {
+                element.find('.statistics-legend-table').css('height', scope.legendHeight);
+              }
 
               var tr = legend.append('tbody')
                   .selectAll('tr')
