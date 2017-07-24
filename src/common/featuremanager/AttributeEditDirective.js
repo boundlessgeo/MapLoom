@@ -83,7 +83,15 @@
 
               var modal = $('#attribute-edit-dialog').modal('toggle');
               modal.on('shown.bs.modal', function() {
-                $(':file').filestyle({
+                $(':file.folder-upload').filestyle({
+                  input: false,
+                  iconName: 'glyphicon glyphicon-folder-open',
+                  buttonText: '',
+                  size: 'sm',
+                  badge: false
+                });
+
+                $(':file.upload').filestyle({
                   input: false,
                   iconName: 'glyphicon glyphicon-upload',
                   buttonText: '',
@@ -187,6 +195,18 @@
 
             scope.fileInputChanged = function(event) {
               var files = event.target.files;
+              var typesAllowed = ['.jpg', '.jpeg', '.png', '.svg', '.mp4'];
+
+              _.forEach(files, function(file) {
+                file.name = file.name.replace(new RegExp('\\s', 'g'), '_');
+              });
+
+              files = _.filter(files, function(file) {
+                return _.some(typesAllowed, function(extension) {
+                  return file.name.length - file.name.indexOf(extension) === extension.length;
+                });
+              });
+
               var propName = event.target.attributes['media-prop-name'].value;
               scope.uploadMedia(propName, files, event.target);
             };

@@ -22,8 +22,21 @@
         </div>
 
         <div class="row" style="margin-left: 0px;" ng-init="mediaTextShow[prop[0]] = false">
-          <input type="file" multiple="multiple" custom-on-change="$parent.$parent.fileInputChanged" media-prop-name="{{prop[0]}}" ng-readonly="isAttributeReadonly(prop[0])"
-                 data-toggle="tooltip" tooltip-append-to-body="true" tooltip-placement="left" title="dfvdfdf" tooltip="Upload"/>
+          <input type="file" class="upload" custom-on-change="$parent.$parent.fileInputChanged" media-prop-name="{{prop[0]}}" ng-readonly="isAttributeReadonly(prop[0])"
+               data-toggle="tooltip" tooltip-append-to-body="true" tooltip-placement="left" title="Upload File" tooltip="Upload"/>
+          <form enctype="multipart/form-data">
+            <input type="file" multiple="multiple"
+                   class="folder-upload"
+                   webkitdirectory="true"
+                   custom-on-change="$parent.$parent.fileInputChanged"
+                   media-prop-name="{{prop[0]}}"
+                   ng-readonly="isAttributeReadonly(prop[0])"
+                   data-toggle="tooltip"
+                   tooltip-append-to-body="true"
+                   tooltip-placement="left"
+                   title="Upload Folder"
+                   tooltip="Upload"/>
+          </form>
             <div class="btn btn-default btn-sm" ng-click="mediaTextShow[prop[0]] = true">
               <span class="icon-span-filestyle glyphicon glyphicon-plus"></span>
             </div>
