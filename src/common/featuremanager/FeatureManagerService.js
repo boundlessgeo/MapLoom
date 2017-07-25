@@ -320,7 +320,7 @@
 
           selectedLayer_ = this.getSelectedItemLayer().layer;
 
-          if (selectedLayer_.get('metadata').name.includes('bikepath')) {
+          if (selectedLayer_.get('metadata').name && selectedLayer_.get('metadata').name.includes('bikepath')) {
             // If there isn't a BIKE_TRAFD value, calculate it. Otherwise, convert the database value to a user-friendly value.
             if (!selectedItem_.properties['BIKE_TRAFD'] || selectedItem_.properties['BIKE_TRAFD'] === '') {
               selectedItem_.properties['BIKE_TRAFD'] = this.calculateBikeDirection(selectedItem_.properties['toFromcl'], selectedItem_.properties['fromTocl']);
