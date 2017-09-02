@@ -1,4 +1,4 @@
-<div ng-show="template === 'chart'">
+<div ng-show="template === 'pie'">
     <div ng-show="editable">
         <label>
             Layer
@@ -18,7 +18,7 @@
         <h4>{{model.attributeSelected.name}}</h4>
         <div id="statistics-chart-area">
             <div id="loom-statistics-legend"></div>
-            <div loom-statistics-chart id="loom-statistics-chart"></div>
+            <div ng-if="template === 'pie'" loom-statistics-chart id="loom-statistics-chart"></div>
         </div>
     </div>
 </div>

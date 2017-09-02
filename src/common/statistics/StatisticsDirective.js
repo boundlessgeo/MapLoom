@@ -293,7 +293,9 @@
               //var w = width - margin.left - margin.right;
               // get the width of the parent div with this (after everything has rendered)
               // d3.select('#statistics-chart-area').node().offsetWidth
-              scope.divWidth = 600;
+              if (!scope.overrideDimensions) {
+                scope.divWidth = 600;
+              }
               var chartWidth = scope.divWidth - scope.margin.left - scope.margin.right;
               var chartHeight = scope.divHeight - scope.margin.top - scope.margin.bottom;
               var r = chartHeight / 2;
@@ -349,6 +351,11 @@
                 var pathSelector = '#pie-chart-slice-path-' + index;
                 $(pathSelector).hover(addSliceHoverClasses, removeSliceHoverClasses);
               }
+
+              // var chart = $('#chart-area')[0];
+              // if (chart) {
+              //   chart.setAttribute('height', '175px');
+              // }
             };
 
             scope.renderLegend = function(data) {

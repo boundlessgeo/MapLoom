@@ -155,14 +155,21 @@
 </head>
 <body class="maploom-body">
 <script>
-  if (window.TEMPLATE === 'chart') {
-    $('#chart-area').css('height', '200px');
+  if (window.TEMPLATE === 'chart' || window.TEMPLATE === 'pie') {
+    $('#chart-area').css('position', 'absolute');
+    $('#chart-area').height(200);
     $('.maploom-body').css('height', 'calc(100% - 200px)')
   }
   $(window.document.body).bind('enable-chart', function(evt, enabled) {
     if (enabled) {
         $('#chart-area').css('height', '200px');
         $('.maploom-body').css('height', 'calc(100% - 200px)')
+    }
+  });
+  $(window.document.body).bind('enable-pie', function(evt, enabled) {
+    if (enabled) {
+      $('#chart-area').css('height', '200px');
+      $('.maploom-body').css('height', 'calc(100% - 200px)')
     }
   });
 </script>
@@ -437,6 +444,7 @@
 </div>
 <div id="chart-area" style="position: absolute; bottom: 0px; width: 100%;">
   <div loom-chart></div>
+  <div loom-pie></div>
 
 </div>
 <% if (!(typeof django === 'undefined') && (django)) { %>
