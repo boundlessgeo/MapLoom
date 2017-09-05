@@ -272,6 +272,8 @@
                 var pathSelector = '#histogram-chart-slice-path-' + index;
                 $(pathSelector).hover(addSliceHoverClasses, removeSliceHoverClasses);
               }
+
+              scope.$broadcast('chart-rendered');
             };
 
             scope.validateChartText = function(text) {
@@ -352,10 +354,7 @@
                 $(pathSelector).hover(addSliceHoverClasses, removeSliceHoverClasses);
               }
 
-              // var chart = $('#chart-area')[0];
-              // if (chart) {
-              //   chart.setAttribute('height', '175px');
-              // }
+              scope.$broadcast('chart-rendered');
             };
 
             scope.renderLegend = function(data) {

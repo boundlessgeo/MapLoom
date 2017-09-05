@@ -181,7 +181,7 @@
   }
 
   module.provider('mapService', function() {
-    this.$get = function($translate, serverService, geogigService, $http, pulldownService,
+    this.$get = function($translate, serverService, geogigService, $http, pulldownService, $window,
                          $cookieStore, $cookies, $location, $browser, configService, dialogService, tableViewService, $rootScope, $q) {
       service_ = this;
       httpService_ = $http;
@@ -201,8 +201,10 @@
       //this.configuration = configService_.configuration;
       this.title = configService_.configuration.about.title;
       this.abstract = configService_.configuration.about.abstract;
+      this.public = configService_.configuration.map.public;
       this.id = configService_.configuration.id;
       this.save_method = 'POST';
+      this.basePersistUrl = 'https://' + $window.location.host + '/published_map/';
 
       if (goog.isDefAndNotNull(this.id) && this.id) {
         this.save_url = '/maps/' + this.id + '/data';
@@ -1119,6 +1121,7 @@
           center: service_.getCenter(),
           zoom: service_.getZoom(),
           projection: service_.getProjection(),
+          public: service_.public,
           layers: []
         },
         sources: []

@@ -343,6 +343,8 @@
     'previous' : 'Previous',
     'clear' : 'Clear',
     'clear_all' : 'Clear all',
+    'make_public': 'Make Map Public',
+    'map_available': 'Map is publicly available at',
 
     'refine_layers_subtitle' : 'Refine layer list',
 

@@ -110,6 +110,15 @@
 
                 }
               });
+
+              scope.$on('chart-rendered', function() {
+                var chart = element.find('#statistics-chart-area')[0];
+                if (chart) {
+                  chart.setAttribute('height', '175px');
+                  chart.setAttribute('overflow-y', 'auto');
+                }
+                $('#chart-area').height(205);
+              });
             }
           }
         };
