@@ -69,6 +69,26 @@
               return false;
             };
 
+            scope.isLoadingStyle = function(layer) {
+              var loadingStyle = layer.get('metadata').loadingStyle;
+              return goog.isDefAndNotNull(loadingStyle) && loadingStyle === true;
+            };
+
+            scope.getLayerStyle = function(layer) {
+              var loading = layer.get('metadata').loadingStyle || true;
+              if (goog.isDefAndNotNull(loading) && loading) {
+                layer.get('metadata').loadingStyle = true;
+                $rootScope.$broadcast('getLayerStyle', layer);
+              }
+            };
+
+            scope.styleChanged = function(layer) {
+              layer.on('change:type', function(evt) {
+                mapService.updateStyle(evt.target);
+              });
+              mapService.updateStyle(layer);
+            };
+
             scope.isLoadingTable = function(layer) {
               var loadingTable = layer.get('metadata').loadingTable;
               return goog.isDefAndNotNull(loadingTable) && loadingTable === true;

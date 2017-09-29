@@ -366,7 +366,8 @@
     'too_many_filters' : 'You may have too many filters selected.  Try removing one of the following:',
     'pin_feature' : 'Pin Feature',
     'unpin_feature' : 'Unpin Feature',
-    'pinned_search' : 'Pinned Search'
+    'pinned_search' : 'Pinned Search',
+    'style_layer': 'Style Layer'
   };
 
   var module = angular.module('loom_translations_en', ['pascalprecht.translate']);

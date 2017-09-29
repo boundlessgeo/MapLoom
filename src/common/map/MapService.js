@@ -348,6 +348,29 @@
       view.fit(extent, map.getSize());
     };
 
+    this.updateStyle = function(layer) {
+      var style = layer.get('style') || layer.get('metadata').style || '';
+      var isComplete = new storytools.edit.StyleComplete.StyleComplete().isComplete(style);
+      if (isComplete && goog.isDefAndNotNull(layer.getSource)) {
+        var layerSource = layer.getSource();
+        if (goog.isDefAndNotNull(layerSource) && goog.isDefAndNotNull(layerSource.getParams)) {
+          var sld = new storytools.edit.SLDStyleConverter.SLDStyleConverter();
+          var xml = sld.generateStyle(style, layer.getSource().getParams().LAYERS, true);
+          httpService_({
+            url: '/geoserver/rest/styles/' + 'point' + '.xml',
+            method: 'PUT',
+            data: xml,
+            headers: {'Content-Type': 'application/vnd.ogc.sld+xml; charset=UTF-8'}
+          }).then(function(result) {
+            if (goog.isDefAndNotNull(layerSource.updateParams)) {
+              layerSource.updateParams({'_dc': new Date().getTime(), '_olSalt': Math.random()});
+            }
+          });
+        }
+      }
+
+    };
+
     this.zoomToLayerFeatures = function(layer) {
       var deferredResponse = q_.defer();
 
