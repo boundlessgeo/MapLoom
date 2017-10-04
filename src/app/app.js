@@ -4,6 +4,7 @@
     'templates-common',
     'storytools.edit.style',
     'loom',
+    'colorpicker.module',
     'ui.bootstrap',
     'ui.router',
     'pascalprecht.translate',
