@@ -357,7 +357,7 @@
           var sld = new storytools.edit.SLDStyleConverter.SLDStyleConverter();
           var xml = sld.generateStyle(style, layer.getSource().getParams().LAYERS, true);
           httpService_({
-            url: '/geoserver/rest/styles/' + 'point' + '.xml',
+            url: '/geoserver/rest/styles/' + layer.get('metadata').styles[0] + '.xml',
             method: 'PUT',
             data: xml,
             headers: {'Content-Type': 'application/vnd.ogc.sld+xml; charset=UTF-8'}
@@ -948,6 +948,7 @@
             // Fetch the Exchange layer metadata
             var exchangePromise = httpService_.get('/layers/' + layerName + '/get').success(function(response) {
               response.attributes = _.sortBy(response.attributes, 'display_order');
+              layer.get('metadata').styles = response.styles;
               layer.set('exchangeMetadata', response);
             });
 

@@ -358,7 +358,8 @@
     'measure_units' : 'Unidades',
     'bounding_box' : 'Cuadro Delimitador',
     'too_many_filters' : 'Es posible que tenga demasiados filtros seleccionados. Prueba a eliminar una de las siguientes:',
-    'style_layer': 'Style Layer'
+    'style_layer': 'Style Layer',
+    'style_name': 'Style Name'
   };
 
   var module = angular.module('loom_translations_es', ['pascalprecht.translate']);

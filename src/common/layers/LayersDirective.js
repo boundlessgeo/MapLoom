@@ -4,7 +4,7 @@
 
   module.directive('loomLayers',
       function($rootScope, mapService, serverService, historyService, featureManagerService,
-               dialogService, $translate, tableViewService) {
+               dialogService, $translate, tableViewService, configService) {
         return {
           restrict: 'C',
           replace: true,
@@ -83,10 +83,16 @@
             };
 
             scope.styleChanged = function(layer) {
-              layer.on('change:type', function(evt) {
-                mapService.updateStyle(evt.target);
-              });
-              mapService.updateStyle(layer);
+              if (configService.configuration.stylingEnabled) {
+                layer.on('change:type', function(evt) {
+                  if (goog.isDefAndNotNull(layer.get('metadata').styles)) {
+                    mapService.updateStyle(evt.target);
+                  }
+                });
+                if (goog.isDefAndNotNull(layer.get('metadata').styles)) {
+                  mapService.updateStyle(layer);
+                }
+              }
             };
 
             scope.isLoadingTable = function(layer) {

@@ -367,7 +367,8 @@
     'pin_feature' : 'Pin Feature',
     'unpin_feature' : 'Unpin Feature',
     'pinned_search' : 'Pinned Search',
-    'style_layer': 'Style Layer'
+    'style_layer': 'Style Layer',
+    'style_name': 'Style Name'
   };
 
   var module = angular.module('loom_translations_en', ['pascalprecht.translate']);
