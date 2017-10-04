@@ -82,13 +82,8 @@
               }
             };
 
-            scope.styleChanged = function(layer) {
+            scope.saveLayerStyle = function(layer) {
               if (configService.configuration.stylingEnabled) {
-                layer.on('change:type', function(evt) {
-                  if (goog.isDefAndNotNull(layer.get('metadata').styles)) {
-                    mapService.updateStyle(evt.target);
-                  }
-                });
                 if (goog.isDefAndNotNull(layer.get('metadata').styles)) {
                   mapService.updateStyle(layer);
                 }
