@@ -220,6 +220,14 @@
               nextLayer(nextIndex);
             }
           } else {
+            // Not a GeoGig layer
+            if (!_.isNil(layer.getSource().updateParams)) {
+              // WMS source
+              layer.getSource().updateParams({ 't': Date.now() });
+            } else if (!_.isNil(layer.getSource().clear)) {
+              // Vector source - heatmap
+              layer.getSource().clear();
+            }
             nextLayer(nextIndex);
           }
         };
