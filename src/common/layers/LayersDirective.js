@@ -155,6 +155,14 @@
             scope.getLayerAttributeVisibility = function(layer) {
               $rootScope.$broadcast('getLayerAttributeVisibility', layer);
             };
+
+            scope.initializeOpacity = function(layer) {
+              // Heatmap layers do not get a config object with a default opacity.
+              // Let's initialize it here so that everything else can work properly.
+              if (_.isNil(_.get(layer.get('metadata'), 'config.opacity'))) {
+                _.set(layer.get('metadata'), 'config.opacity', layer.getOpacity());
+              }
+            };
           }
         };
       }
