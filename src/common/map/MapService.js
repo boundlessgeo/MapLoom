@@ -418,8 +418,7 @@
         httpService_.post(url, wpsPostData).success(function(data, status, headers, config) {
           var x2js = new X2JS();
           var json = x2js.xml_str2json(data);
-          if (goog.isDefAndNotNull(json.ExecuteResponse) && goog.isDefAndNotNull(json.ExecuteResponse.Status) &&
-              goog.isDefAndNotNull(json.ExecuteResponse.Status.ProcessFailed)) {
+          if (!goog.isDefAndNotNull(json.BoundingBox)) {
             service_.zoomToLayerExtent(layer);
             deferredResponse.resolve();
             return;
