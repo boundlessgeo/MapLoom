@@ -304,5 +304,60 @@ describe('MapService', function() {
       totalLayers = mapService.getLayers().length;
       expect(totalLayers).toBe(1);
     });
+
+    function testExtentDefinition(layer, newExtent) {
+      // put the map into web mercator
+      configService.configuration.map.projection = 'EPSG:900913';
+      var map = mapService.createMap();
+      // fake a size.
+      map.setSize([100, 100]);
+      // set the map internally for the service
+      mapService.map = map;
+      mapService.zoomToLayerExtent(layer);
+
+      var test_extent = map.getView().calculateExtent([100, 100]);
+      expect(test_extent).toEqual(newExtent);
+    }
+
+    it('should zoomToLayerExtent for GS 2.11 style definition', function() {
+      var new_extent = [-10171811.54855454,4541447.353192765,-9927213.058041975,4786045.84370533];
+      var layer = {
+        getSource: function() {
+          return {};
+        },
+        get: function() {
+          return {
+            bbox: {
+              crs: 'EPSG:4326',
+              extent: [-91.0038721, 38.0736159, -89.5487379, 39.1115495]
+            }
+          };
+        }
+      };
+
+      testExtentDefinition(layer, new_extent);
+    });
+
+    it('should zoomToLayerExtent for GS 2.12 style definition', function() {
+      var new_extent = [-10171811.54855454,4541447.353192765,-9927213.058041975,4786045.84370533];
+      var layer = {
+        getSource: function() {
+          return {};
+        },
+        get: function() {
+          return {
+            bbox: {
+              extent: {
+                crs: 'EPSG:4326',
+                extent: [-91.0038721, 38.0736159, -89.5487379, 39.1115495]
+              }
+            }
+          };
+        }
+      };
+
+      testExtentDefinition(layer, new_extent);
+    });
+
   });
 });

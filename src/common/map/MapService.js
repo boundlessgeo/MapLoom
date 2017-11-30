@@ -465,8 +465,19 @@
           newExtent[3] -= yDelta;
         }
 
+        // address differences in the metadata from GeoServer 2.12
+        var crs = metadata.bbox.crs;
+        var isNotNull = goog.isDefAndNotNull;
+        if (isNotNull(metadata) &&
+            isNotNull(metadata.bbox) &&
+            isNotNull(metadata.bbox.extent) &&
+            isNotNull(metadata.bbox.extent.crs)) {
+          newExtent = metadata.bbox.extent.extent;
+          crs = metadata.bbox.extent.crs;
+        }
+
         // Create transform and project to current map
-        var transform = ol.proj.getTransformFromProjections(ol.proj.get(metadata.bbox.crs),
+        var transform = ol.proj.getTransformFromProjections(ol.proj.get(crs),
             service_.map.getView().getProjection());
         newExtent = ol.extent.applyTransform(newExtent, transform);
 

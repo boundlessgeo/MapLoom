@@ -248,6 +248,8 @@ var maploomProj4Defs = function(defs) {
   defs('EPSG:4322', '+proj=longlat +ellps=WGS72 +towgs84=0,0,4.5,0,0,0.554,0.2263 +no_defs');
   defs('EPSG:4324', '+proj=longlat +ellps=WGS72 +towgs84=0,0,1.9,0,0,0.814,-0.38 +no_defs');
   defs('EPSG:4326', '+proj=longlat +datum=WGS84 +no_defs');
+  // alias for 4326
+  defs('CRS:84', '+proj=longlat +datum=WGS84 +no_defs');
   defs('EPSG:4463', '+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs');
   defs('EPSG:4470', '+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs');
   defs('EPSG:4475', '+proj=longlat +ellps=intl +towgs84=-381.788,-57.501,-256.673,0,0,0,0 +no_defs');
