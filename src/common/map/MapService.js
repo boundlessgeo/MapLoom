@@ -425,7 +425,7 @@
         if (!typeName.startsWith(metadata.workspace + ':')) {
           typeName = metadata.workspace + ':' + metadata.name;
         }
-        
+
         var url = metadata.url + '/wps?version=' + settings.WPSVersion;
 
         var wpsPostData = '' +
@@ -1007,7 +1007,7 @@
           // Test if layer is read-only
           if (goog.isDefAndNotNull(mostSpecificUrl)) {
             layer.get('metadata').readOnly = true;
-            var metadata = layer.get('metadata')
+            var metadata = layer.get('metadata');
 
             var typeName = metadata.name;
             if (!typeName.startsWith(metadata.workspace + ':')) {
