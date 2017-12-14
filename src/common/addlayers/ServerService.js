@@ -350,6 +350,10 @@ var SERVER_SERVICE_USE_PROXY = true;
         lazy: false
       };
 
+      if (!window.location.search.includes('layer=')) {
+        server.lazy = true;
+      }
+
       goog.object.extend(server, serverInfo, {});
 
       if (goog.isDefAndNotNull(loaded)) {
