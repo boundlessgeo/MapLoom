@@ -1186,20 +1186,27 @@
         }
       });
     } else {
+      var metadata = selectedLayer_.get('metadata');
+
+      var typeName = metadata.name;
+      if (!typeName.startsWith(metadata.workspace + ':')) {
+        typeName = metadata.workspace + ':' + metadata.name;
+      }
+
       var filter = '<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">' +
           '<ogc:FeatureId fid="' + selectedItem_.id + '" />' +
           '</ogc:Filter>';
       if (postType === wfsPostTypes_.DELETE) {
-        commitMsg = translate_.instant('removed_1_feature', {'layer': selectedLayer_.get('metadata').nativeName});
+        commitMsg = translate_.instant('removed_1_feature', {'layer': metadata.nativeName});
         wfsRequestTypePartial = '<wfs:Delete handle="' + commitMsg +
-            '" xmlns:feature="' + selectedLayer_.get('metadata').workspaceURL + '" typeName="' +
-            selectedLayer_.get('metadata').name + '">' +
+            '" xmlns:feature="' + metadata.workspaceURL + '" typeName="' +
+            typeName + '">' +
             filter + '</wfs:Delete>';
       } else if (postType === wfsPostTypes_.UPDATE) {
-        commitMsg = translate_.instant('modified_1_feature', {'layer': selectedLayer_.get('metadata').nativeName});
+        commitMsg = translate_.instant('modified_1_feature', {'layer': metadata.nativeName});
         wfsRequestTypePartial = '<wfs:Update handle="' + commitMsg +
-            '" xmlns:feature="' + selectedLayer_.get('metadata').workspaceURL + '" typeName="' +
-            selectedLayer_.get('metadata').name + '">' +
+            '" xmlns:feature="' + metadata.workspaceURL + '" typeName="' +
+            typeName + '">' +
             partial + filter +
             '</wfs:Update>';
         //properties will be null in the case of a geometry edit, so this needs to be handled

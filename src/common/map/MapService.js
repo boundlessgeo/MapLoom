@@ -420,8 +420,13 @@
       }
 
       if (service_.layerIsEditable(layer)) {
-        var layerTypeName = layer.get('metadata').name;
-        var url = layer.get('metadata').url + '/wps?version=' + settings.WPSVersion;
+        var metadata = layer.get('metadata');
+        var typeName = metadata.name;
+        if (!typeName.startsWith(metadata.workspace + ':')) {
+          typeName = metadata.workspace + ':' + metadata.name;
+        }
+
+        var url = metadata.url + '/wps?version=' + settings.WPSVersion;
 
         var wpsPostData = '' +
             '<?xml version="1.0" encoding="UTF-8"?><wps:Execute version="' + settings.WPSVersion + '" service="WPS" ' +
@@ -441,8 +446,8 @@
             '<wps:Reference mimeType="text/xml" xlink:href="http://geoserver/wfs" method="POST">' +
             '<wps:Body>' +
             '<wfs:GetFeature service="WFS" version="' + settings.WFSVersion + '" outputFormat="GML2" ' +
-                'xmlns:' + layer.get('metadata').workspace + '="' + layer.get('metadata').workspaceURL + '">' +
-            '<wfs:Query typeName="' + layerTypeName + '"/>' +
+                'xmlns:' + metadata.workspace + '="' + metadata.workspaceURL + '">' +
+            '<wfs:Query typeName="' + typeName + '"/>' +
             '</wfs:GetFeature>' +
             '</wps:Body>' +
             '</wps:Reference>' +
@@ -1002,14 +1007,21 @@
           // Test if layer is read-only
           if (goog.isDefAndNotNull(mostSpecificUrl)) {
             layer.get('metadata').readOnly = true;
+            var metadata = layer.get('metadata');
+
+            var typeName = metadata.name;
+            if (!typeName.startsWith(metadata.workspace + ':')) {
+              typeName = metadata.workspace + ':' + minimalConfig.name;
+            }
+
             var testReadOnly = function() {
               var wfsRequestData = '<?xml version="1.0" encoding="UTF-8"?> ' +
                   '<wfs:Transaction xmlns:wfs="http://www.opengis.net/wfs" ' +
                   'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
                   'service="WFS" version="1.0.0" ' +
                   'xsi:schemaLocation="http://www.opengis.net/wfs http://schemas.opengis.net/wfs/1.0.0/wfs.xsd"> ' +
-                  '<wfs:Update xmlns:feature="' + layer.get('metadata').workspaceURL + '" typeName="' +
-                  minimalConfig.name + '">' +
+                  '<wfs:Update xmlns:feature="' + metadata.workspaceURL + '" typeName="' +
+                  typeName + '">' +
                   '<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">' +
                   '<ogc:FeatureId fid="garbage_id" />' +
                   '</ogc:Filter></wfs:Update>' +
