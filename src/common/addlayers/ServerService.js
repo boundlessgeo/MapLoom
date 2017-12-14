@@ -350,7 +350,7 @@ var SERVER_SERVICE_USE_PROXY = true;
         lazy: false
       };
 
-      if (!window.location.search.includes('layer=')) {
+      if (goog.isDefAndNotNull(window.location.search) && !window.location.search.includes('layer=')) {
         server.lazy = true;
       }
 
