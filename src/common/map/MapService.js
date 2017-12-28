@@ -1372,7 +1372,27 @@
 
     // Update the map after save.
     this.updateMap = function(data) {
+      // Update the map id.
       service_.id = data.id;
+
+      // Update the browser's location if we can.
+      var _window = getRealWindow();
+      if (_window.history && _window.history.pushState && service_.id > 0) {
+        var location = _window.location;
+        // Make a relative link to the new map.
+        var url = '/maps/' + service_.id + '/view';
+        // Add the query search if it exists
+        if (!_.isNil(location.search) && !_.isEmpty(location.search)) {
+          url += location.search;
+        }
+        // Add the hash if it exists
+        if (!_.isNil(location.hash) && !_.isEmpty(location.hash)) {
+          url += location.hash;
+        }
+        // Push the new URL to the browser history. This will change the browser's location and back/forward buttons'
+        // history without reloading the page.
+        _window.history.pushState(null, null, url);
+      }
     };
 
     this.save = function(copy) {
@@ -1451,6 +1471,8 @@
         }
       }).success(function(data, status, headers, config) {
         service_.updateMap(data);
+        // Show the share map modal.
+        angular.element('#shareMap').modal('show');
       }).error(function(data, status, headers, config) {
         if (status == 403 || status == 401) {
           dialogService_.error(translate_.instant('save_failed'), translate_.instant('map_save_permission'));
@@ -1789,6 +1811,10 @@
         return window.parent;
       }
       return window;
+    };
+
+    this.getCurrentURL = function() {
+      return getRealWindow().location.href;
     };
 
     /** Return a hash string for storing map information.
