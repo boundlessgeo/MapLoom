@@ -67,6 +67,15 @@
 
         $scope.mapService = mapService;
         $scope.refreshService = refreshService;
+        $scope.settings = settings;
+        // Get a list of available coordinate display types and add it to the scope.
+        $scope.coordinateDisplays = _.chain(coordinateDisplays)
+            .values()
+            // Ignore the 'other' because I have no idea what it is for.
+            .reject(function(coordinateDisplay) {
+              return coordinateDisplay === 'other';
+            })
+            .value();
       });
 
   module.provider('debugService', function() {

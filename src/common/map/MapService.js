@@ -1747,7 +1747,7 @@
       }
     };
 
-    this.switchMousePosCoordFormat = function() {
+    this.switchMousePosCoordFormat = function(newCoordinateDisplay) {
       var index;
       for (index = 0; index < this.map.getControls().getLength(); ++index) {
         if (this.map.getControls().getArray()[index] instanceof ol.control.MousePosition) {
@@ -1755,15 +1755,26 @@
         }
       }
 
-      if (settings.coordinateDisplay === coordinateDisplays.DMS) {
-        settings.coordinateDisplay = coordinateDisplays.DD;
+      // If a newCoordinateDisplay was NOT passed in, switch to the next one in a round robin.
+      // This is probably not necessary but wanted to maintain backwards compatibility.
+      if (_.isNil(newCoordinateDisplay)) {
+        if (settings.coordinateDisplay === coordinateDisplays.DMS) {
+          settings.coordinateDisplay = coordinateDisplays.DD;
+        } else if (settings.coordinateDisplay === coordinateDisplays.DD) {
+          settings.coordinateDisplay = coordinateDisplays.MGRS;
+        } else if (settings.coordinateDisplay === coordinateDisplays.MGRS) {
+          settings.coordinateDisplay = coordinateDisplays.DMS;
+        }
+      } else {
+        settings.coordinateDisplay = newCoordinateDisplay;
+      }
+
+      if (settings.coordinateDisplay === coordinateDisplays.DD) {
         var precision = settings.DDPrecision;
         this.map.getControls().getArray()[index].setCoordinateFormat(ol.coordinate.createStringXY(precision));
-      } else if (settings.coordinateDisplay === coordinateDisplays.DD) {
-        settings.coordinateDisplay = coordinateDisplays.MGRS;
-        this.map.getControls().getArray()[index].setCoordinateFormat(xyToMGRSFormat);
       } else if (settings.coordinateDisplay === coordinateDisplays.MGRS) {
-        settings.coordinateDisplay = coordinateDisplays.DMS;
+        this.map.getControls().getArray()[index].setCoordinateFormat(xyToMGRSFormat);
+      } else if (settings.coordinateDisplay === coordinateDisplays.DMS) {
         this.map.getControls().getArray()[index].setCoordinateFormat(ol.coordinate.toStringHDMS);
       }
     };
