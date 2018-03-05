@@ -1035,7 +1035,7 @@
           }
 
           if (goog.isArray(fullConfig.BoundingBox)) {
-            bbox = {extent: fullConfig.BoundingBox[0]};
+            bbox = fullConfig.BoundingBox[0];
           } else if (goog.isArray(fullConfig.extent)) {
             bbox = {
               extent: fullConfig.extent,
