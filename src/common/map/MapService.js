@@ -1280,6 +1280,10 @@
           meta.layerOrder++;
         }
 
+        if (!_.isNil(meta.config.opacity)) {
+          layer.setOpacity(meta.config.opacity);
+        }
+
         var insertIndex = -1;
 
         for (var index = 0; index < mapLayers.length; index++) {
