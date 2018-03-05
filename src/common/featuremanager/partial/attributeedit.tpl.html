@@ -28,27 +28,27 @@
       </div>
 
       <div ng-if="!featureManagerService.isMediaPropertyName(prop[0])">
-        <label class="control-label custom-control-label">{{prop[0]}}</label>
+        <label class="control-label custom-control-label">{{prop.label !== '' ? prop.label : prop[0]}}</label>
         <div ng-switch on="prop.type">
-          <datetimepicker ng-switch-when="xsd:dateTime" date-object="prop[1]" default-date="inserting"></datetimepicker>
-          <datetimepicker ng-switch-when="xsd:date" date-object="prop[1]" default-date="inserting" time="false"></datetimepicker>
-          <datetimepicker ng-switch-when="xsd:time" date-object="prop[1]" default-date="inserting" date="false"></datetimepicker>
+          <datetimepicker editable="{{!prop.readOnly}}" ng-switch-when="xsd:dateTime" date-object="prop[1]" default-date="inserting"></datetimepicker>
+          <datetimepicker editable="{{!prop.readOnly}}" ng-switch-when="xsd:date" date-object="prop[1]" default-date="inserting" time="false"></datetimepicker>
+          <datetimepicker editable="{{!prop.readOnly}}" ng-switch-when="xsd:time" date-object="prop[1]" default-date="inserting" date="false"></datetimepicker>
           <div ng-switch-when="simpleType" ng-class="{'has-error': !prop.valid}">
-            <select ng-model="prop[1]" ng-options="enum._value as (enum._label) ? enum._label : enum._value for enum in prop.enum" ng-change="validateField(prop, 1)" class="form-control">
+            <select ng-model="prop[1]" ng-readonly="prop.readOnly" ng-options="enum._value as (enum._label) ? enum._label : enum._value for enum in prop.enum" ng-change="validateField(prop, 1)" class="form-control">
               <option></option>
             </select>
           </div>
           <div ng-switch-when="xsd:int" ng-class="{'has-error': !prop.valid}">
-            <input ng-model="prop[1]" type="text" class="form-control" ng-change="validateField(prop, 1)"/>
+            <input ng-model="prop[1]" ng-readonly="prop.readOnly" type="text" class="form-control" ng-change="validateField(prop, 1)"/>
           </div>
           <div ng-switch-when="xsd:integer" ng-class="{'has-error': !prop.valid}">
-            <input ng-model="prop[1]" type="text" class="form-control" ng-change="validateField(prop, 1)"/>
+            <input ng-model="prop[1]" ng-readonly="prop.readOnly" type="text" class="form-control" ng-change="validateField(prop, 1)"/>
           </div>
           <div ng-switch-when="xsd:double" ng-class="{'has-error': !prop.valid}">
-            <input ng-model="prop[1]" type="text" class="form-control" ng-change="validateField(prop, 1)"/>
+            <input ng-model="prop[1]" ng-readonly="prop.readOnly" type="text" class="form-control" ng-change="validateField(prop, 1)"/>
           </div>
           <div ng-switch-when="xsd:decimal" ng-class="{'has-error': !prop.valid}">
-            <input ng-model="prop[1]" type="text" class="form-control" ng-change="validateField(prop, 1)"/>
+            <input ng-model="prop[1]" ng-readonly="prop.readOnly" type="text" class="form-control" ng-change="validateField(prop, 1)"/>
           </div>
           <div ng-switch-when="xsd:boolean" class="input-group"  ng-class="{'has-error': !prop.valid}">
             <div class="input-group-btn" ng-class="{'dropup': $last}">
@@ -57,17 +57,17 @@
               </button>
               <ul class="dropdown-menu">
                 <li>
-                  <a ng-click="selectValue(prop, null)">&nbsp;</a>
+                  <a ng-click="!prop.readOnly && selectValue(prop, null)">&nbsp;</a>
                 </li>
                 <li ng-repeat="enum in prop.enum">
-                  <a ng-click="selectValue(prop, $index)" translate="{{enum._value}}"></a>
+                  <a ng-click="!prop.readOnly && selectValue(prop, $index)" translate="{{enum._value}}"></a>
                 </li>
               </ul>
             </div>
             <input value="{{translate(prop[1])}}" type="text" class="form-control" disabled/>
           </div>
           <div ng-switch-default  ng-class="{'has-error': !prop.valid}">
-            <autotextarea ng-model="prop[1]" class="form-control custom-form-control auto-text-area" ng-change="validateField(prop, 1)"></autotextarea>
+            <autotextarea ng-readonly="prop.readOnly" ng-model="prop[1]" class="form-control custom-form-control auto-text-area" ng-change="validateField(prop, 1)"></autotextarea>
           </div>
         </div>
       </div>

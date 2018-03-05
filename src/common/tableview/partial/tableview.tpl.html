@@ -76,6 +76,11 @@
                     <datetimepicker ng-if="tableviewform.$visible" id="table-datetime" date-object="row.feature.properties[attr.name]"
                                     default-date="false" seperate-time="false" date="false"></datetimepicker>
                 </div>
+                <div ng-switch-when="simpleType" ng-class="{'has-error': !prop.valid}">
+                    <select ng-model="row.feature.properties[attr.name]" ng-options="enum._value as (enum._label) ? enum._label : enum._value for enum in prop.enum" class="form-control">
+                        <option></option>
+                    </select>
+                </div>
               <div ng-switch-default class="input-group">
                 <span ng-if="!tableviewform.$visible">{{getAttributeValue(attr.name, row.feature.properties[attr.name])}}</span>
                 <select ng-if="tableviewform.$visible" ng-model="row.feature.properties[attr.name]" ng-options="enum._value as (enum._label) ? enum._label : enum._value for enum in restrictions[attr.name].type" class="form-control" style="width:160px">
