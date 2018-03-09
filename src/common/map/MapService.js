@@ -355,14 +355,14 @@
           var new_name = layer.get('metadata').name + '_' + name;
           console.log('Creating the style so that is it unique ', new_name);
           httpService_({
-            url: '/geoserver/rest/styles?name=' + new_name,
+            url: '/gs/rest/styles?name=' + new_name,
             method: 'POST',
             data: xml,
             headers: { 'Content-Type': 'application/vnd.ogc.sld+xml' }
           }).then(function(response) {
             var default_req_body = '<layer><defaultStyle><name>' + new_name + '</name></defaultStyle></layer>';
             httpService_({
-              url: '/geoserver/rest/layers/' + layer.get('metadata').name,
+              url: '/gs/rest/layers/' + layer.get('metadata').name,
               method: 'PUT',
               data: default_req_body,
               headers: { 'Content-Type': 'text/xml' }
@@ -391,7 +391,7 @@
           maybe_rename_style(layer, xml);
 
           httpService_({
-            url: '/geoserver/rest/styles/' + layer.get('metadata').defaultStyle.name + '.xml',
+            url: '/gs/rest/styles/' + layer.get('metadata').defaultStyle.name + '.xml',
             method: 'PUT',
             data: xml,
             headers: {'Content-Type': 'application/vnd.ogc.sld+xml'}
