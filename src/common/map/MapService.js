@@ -1162,7 +1162,7 @@
               layer.set('exchangeMetadata', response);
             });
 
-            var gsStylePromise = httpService_.get('/geoserver/rest/layers/' + layerName + '.json').success(function(response) {
+            var gsStylePromise = httpService_.get('/gs/rest/layers/' + layerName + '.json').success(function(response) {
               if (goog.isDefAndNotNull(response.layer) && goog.isDefAndNotNull(response.layer.defaultStyle)) {
                 layer.get('metadata').defaultStyle = response.layer.defaultStyle;
               }
