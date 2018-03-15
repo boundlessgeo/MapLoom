@@ -96,20 +96,18 @@
             };
 
             scope.saveLayerStyle = function(layer) {
-              if (configService.configuration.stylingEnabled) {
-                if (goog.isDefAndNotNull(layer.get('metadata').defaultStyle)) {
-                  var loading = layer.get('metadata').loadingStyle || true;
-                  if (goog.isDefAndNotNull(loading) && loading) {
-                    layer.get('metadata').loadingStyle = true;
-                    mapService.updateStyle(layer).then(function() {
-                      layer.get('metadata').loadingStyle = false;
-                    }, function() {
-                      layer.get('metadata').loadingStyle = false;
-                      dialogService.error($translate.instant('save_layer_style'),
-                          $translate.instant('style_layer_failed',
-                              { 'style_name': layer.get('metadata').defaultStyle.name}));
-                    });
-                  }
+              if (goog.isDefAndNotNull(layer.get('metadata').defaultStyle)) {
+                var loading = layer.get('metadata').loadingStyle || true;
+                if (goog.isDefAndNotNull(loading) && loading) {
+                  layer.get('metadata').loadingStyle = true;
+                  mapService.updateStyle(layer).then(function() {
+                    layer.get('metadata').loadingStyle = false;
+                  }, function() {
+                    layer.get('metadata').loadingStyle = false;
+                    dialogService.error($translate.instant('save_layer_style'),
+                        $translate.instant('style_layer_failed',
+                            { 'style_name': layer.get('metadata').defaultStyle.name}));
+                  });
                 }
               }
             };
