@@ -44,7 +44,7 @@
               <i class="glyphicon glyphicon-list"></i>
             </a>
               <a type="button" ng-click="toggleStyleControl(layer)"
-                 ng-show="stylingEnabled && layer.get('metadata').editable && layer.get('metadata').defaultStyle"
+                 ng-show="stylingEnabled && hasStylePermissions(layer) && layer.get('metadata').defaultStyle"
                 class="btn btn-sm btn-default" tooltip-append-to-body="true"
                 tooltip-placement="top" tooltip="{{'show_style_editor' | translate}}">
                <div class="loom-loading" spinner-radius="16" spinner-hidden="!isLoadingStyle(layer)"></div>
@@ -81,7 +81,7 @@
             </a>
           </div>
         </div>
-          <div class="container" ng-show="layer.get('metadata').editable && layer.get('metadata').showStylePanel">
+          <div class="container" ng-show="hasStylePermissions(layer) && layer.get('metadata').showStylePanel">
           <label id="style-label" class="ellipsis" for="styleRow">
               {{ layer.get('metadata').defaultStyle.name }}.sld
           </label>
@@ -91,7 +91,7 @@
               <i class="glyphicon glyphicon-floppy-saved"></i>
           </a>
           </div>
-          <div id="styleRow" class="container" ng-show="stylingEnabled && layer.get('metadata').editable && layer.get('metadata').showStylePanel">
+          <div id="styleRow" class="container" ng-show="stylingEnabled && hasStylePermissions(layer) && layer.get('metadata').showStylePanel">
               <style-editor
                 class="minheight"
                 control="{carousel:true, default:false}"
