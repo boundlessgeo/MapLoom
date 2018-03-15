@@ -73,7 +73,6 @@
               var loadingStyle = layer.get('metadata').loadingStyle;
               return goog.isDefAndNotNull(loadingStyle) && loadingStyle === true;
             };
-            
             scope.hasStylePermissions = function(layer) {
               var exchangeMetadata = layer.get('exchangeMetadata');
               var has_perms = false;
