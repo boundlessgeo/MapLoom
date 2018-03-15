@@ -73,6 +73,18 @@
               var loadingStyle = layer.get('metadata').loadingStyle;
               return goog.isDefAndNotNull(loadingStyle) && loadingStyle === true;
             };
+            
+            scope.hasStylePermissions = function(layer) {
+              var exchangeMetadata = layer.get('exchangeMetadata');
+              var has_perms = false;
+              if (goog.isDefAndNotNull(exchangeMetadata) && goog.isDefAndNotNull(exchangeMetadata.permissions)) {
+                var permissions = exchangeMetadata.permissions;
+                if (goog.isDefAndNotNull(permissions)) {
+                  has_perms = permissions.edit_style;
+                }
+              }
+              return has_perms;
+            };
 
             scope.toggleStyleControl = function(layer) {
               var showStylePanel = layer.get('metadata').showStylePanel;
