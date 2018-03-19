@@ -554,8 +554,19 @@ var SERVER_SERVICE_USE_PROXY = true;
      * Read the configuration for a server.
      */
     this.populateLayersConfigRest = function(server, force, deferredResponse) {
-      var meta_url = server.url + '?f=pjson';
-      var url = configService_.configuration.proxy + encodeURIComponent(meta_url);
+      var meta_url = server.url;
+      if (server.url.indexOf('?') === -1) {
+        meta_url = server.url + '?f=pjson';
+      } else {
+        meta_url = server.url.replace(/(.)\/$/, '$1') + '&f=pjson';
+      }
+      var url = null;
+      var PKIproxyUrl = window.location.protocol + '//' + window.location.host + '/pki/';
+      if (server.url.indexOf(PKIproxyUrl) === 0) {
+        url = meta_url;
+      } else {
+        url = configService_.configuration.proxy + encodeURIComponent(meta_url);
+      }
 
       // convert the ESRI spatial reference to an EPSG code.
       var sr_to_crs = function(sr) {
@@ -694,7 +705,7 @@ var SERVER_SERVICE_USE_PROXY = true;
     var cleanTileUrl = function(tileUrl) {
       // this is definitely an absolute URL if it starts with http
       if (tileUrl.substring(0, 4).toLowerCase() == 'http') {
-        return trimUrl.substring(trimUrl.indexOf('//'));
+        return tileUrl.substring(tileUrl.indexOf('//'));
       }
 
       // double-slash is short hand for schemaless http,
@@ -1065,7 +1076,10 @@ var SERVER_SERVICE_USE_PROXY = true;
 
         // if the service is remote, setup a proxy for the get caps URL
         if (server.remote === true) {
-          url_getcaps = configService_.configuration.proxy + encodeURIComponent(url_getcaps);
+          var PKIproxyUrl = window.location.protocol + '//' + window.location.host + '/pki/';
+          if (url_getcaps.indexOf(PKIproxyUrl) === -1) {
+            url_getcaps = configService_.configuration.proxy + encodeURIComponent(url_getcaps);
+          }
         }
 
         server.populatingLayersConfig = true;

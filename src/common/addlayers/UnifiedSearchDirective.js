@@ -704,11 +704,13 @@
               return $http.get(layer.detail_url + '/get').then(function(response) {
                 var layer_def = response.data;
                 var servers = serverService.getServers();
+                var server_to_use = null;
 
                 var server_exists = false;
                 for (var i = 0, ii = servers.length; i < ii; i++) {
                   if (servers[i].url === layer_def.url) {
                     server_exists = true;
+                    server_to_use = servers[i];
                   }
                 }
 
@@ -725,9 +727,19 @@
                     name: server_name
                   }).then(function(server) {
                     layer.add = true;
-                    layer.name = layer.typename;
+
+                    // Strip out the workspace
+                    layer.name = (layer.typename.indexOf(':') > -1) ? layer.typename.slice(layer.typename.indexOf(':') + 1) : layer.typename;
+
                     LayersService.addLayer(layer, server.id, server);
                   });
+                } else {
+                  layer.add = true;
+
+                  // Strip out the workspace
+                  layer.name = (layer.typename.indexOf(':') > -1) ? layer.typename.slice(layer.typename.indexOf(':') + 1) : layer.typename;
+
+                  LayersService.addLayer(layer, server_to_use.id, server_to_use);
                 }
               });
             };

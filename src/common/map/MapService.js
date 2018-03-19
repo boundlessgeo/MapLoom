@@ -666,6 +666,25 @@
     };
 
     this.createLayerFull = function(minimalConfig, fullConfig, server, opt_layerOrder) {
+      // Helper functions for PKI route adjustment
+      var matchesPKIproxy = function(url) {
+        var PKIproxyUrl = window.location.protocol + '//' + window.location.host + '/pki/';
+        return url.indexOf(PKIproxyUrl) === 0;
+      };
+      var appendAccessToken = function(url) {
+        if (goog.isDefAndNotNull(configService_.configuration.access_token)) {
+          // no query params yet
+          if (url.indexOf('?') === -1) {
+            url = url + '?access_token=' + configService_.configuration.access_token;
+          } else {
+            if (url.indexOf('access_token') === -1) {
+              url = url + '&access_token=' + configService_.configuration.access_token;
+            }
+          }
+        }
+
+        return url;
+      };
       // download missing projection projection if we don't have it
       if (goog.isDefAndNotNull(fullConfig)) {
         var projcode = service_.getCRSCode(fullConfig.CRS);
@@ -875,6 +894,9 @@
         } else if (server.ptype === 'gxp_arcrestsource' && server.restConfig.capabilities.indexOf('Tilemap') < 0) {
           // This arc service does not support tiled maps, so this will
           // use the arc image service instead...
+          if (matchesPKIproxy(server.url)) {
+            server.url = appendAccessToken(server.url);
+          }
           serviceSource = new ol.source.TileArcGISRest({
             url: server.url
           });
@@ -936,7 +958,15 @@
           var attribution = new ol.Attribution({
             html: 'Tiles &copy; <a href="' + server.url + '">ArcGIS</a>'
           });
+
+          if (server.url.lastIndexOf('/') !== server.url.length - 1) {
+            server.url += '/';
+          }
+
           var serviceUrl = server.url + 'tile/{z}/{y}/{x}';
+          if (matchesPKIproxy(serviceUrl)) {
+            serviceUrl = appendAccessToken(serviceUrl);
+          }
           var serviceSource = null;
           if (server.proj === 'EPSG:4326') {
             var projection = ol.proj.get('EPSG:4326');
@@ -1005,7 +1035,8 @@
           }
 
         } else if (server.ptype === 'gxp_wmscsource') {
-          nameSplit = fullConfig.Name.split(':');
+          var name = fullConfig.name || fullConfig.Name;
+          nameSplit = name.split(':');
 
           // favor virtual service url when available
           var mostSpecificUrl = server.url;
@@ -1022,6 +1053,8 @@
             }
           }
 
+          var proj;
+
           if (goog.isArray(fullConfig.BoundingBox)) {
             bbox = {extent: fullConfig.BoundingBox[0]};
           } else if (goog.isArray(fullConfig.extent)) {
@@ -1034,6 +1067,17 @@
               extent: minimalConfig.bbox,
               crs: 'EPSG:900913'
             };
+          } else if (fullConfig.bbox_left) {
+            bbox = {
+              crs: server.CRS || fullConfig.srid,
+              extent: [
+                fullConfig.bbox_left,
+                fullConfig.bbox_bottom,
+                fullConfig.bbox_right,
+                fullConfig.bbox_top
+              ]
+            };
+            proj = server.CRS || fullConfig.srid;
           }
 
           var source_params = {
@@ -1043,6 +1087,13 @@
 
           if (server.version !== undefined) {
             source_params['VERSION'] = server.version;
+          } else {
+            source_params['VERSION'] = '1.1.1';
+            source_params['SRS'] = proj;
+          }
+
+          if (matchesPKIproxy(mostSpecificUrlWms)) {
+            mostSpecificUrlWms = appendAccessToken(mostSpecificUrlWms);
           }
 
           var tilewms_source = new ol.source.TileWMS({
@@ -1072,9 +1123,14 @@
             // manually override the projection
             var proj = this._projection !== undefined ? this._projection : projection;
 
+            if (proj.getCode() === 'EPSG:900913') {
+              proj = ol.proj.get('EPSG:3857');
+            }
+
             var url = this._getRequestUrl_(tileCoord, tileSize, tileExtent, pixelRatio, proj, params);
 
-            if (this._isRemote === true) {
+            // if it is a remote service and not going through pki proxy already
+            if (this._isRemote === true && !matchesPKIproxy(url)) {
               url = configService_.configuration.proxy + encodeURIComponent(url);
             }
 
@@ -1086,18 +1142,18 @@
               serverId: server.id,
               name: minimalConfig.name,
               url: goog.isDefAndNotNull(mostSpecificUrl) ? mostSpecificUrl : undefined,
-              title: fullConfig.Title,
-              abstract: fullConfig.Abstract,
+              title: fullConfig.Title || fullConfig.title,
+              abstract: fullConfig.Abstract || fullConfig.abstract,
               keywords: fullConfig.KeywordList,
               workspace: nameSplit.length > 1 ? nameSplit[0] : '',
               readOnly: false,
               editable: false,
               bbox: bbox,
-              projection: service_.getCRSCode(fullConfig.CRS),
+              projection: service_.getCRSCode(fullConfig.CRS) || server.CRS || fullConfig.srid,
               savedSchema: minimalConfig.schema,
               dimensions: fullConfig.Dimension
             },
-            projection: server.override_crs,
+            projection: server.override_crs || service_.getCRSCode(fullConfig.CRS) || server.CRS || fullConfig.srid,
             visible: minimalConfig.visibility,
             source: tilewms_source
           });
@@ -1215,7 +1271,12 @@
                 var z = coordinate[0];
                 var x = coordinate[1];
                 var y = (1 << z) - coordinate[2] - 1;
-                return '/proxy/?url=' + url + minimalConfig.name + '/' + z + '/' + x + '/' + y + '.png';
+                var proxy_prepend = '/proxy/?url=';
+                // don't prepend a proxy if we're already going through pki proxy
+                if (matchesPKIproxy(url)) {
+                  proxy_prepend = '';
+                }
+                return proxy_prepend + url + minimalConfig.name + '/' + z + '/' + x + '/' + y + '.png';
               }
             })
           });
