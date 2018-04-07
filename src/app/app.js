@@ -93,6 +93,8 @@
   });
 
   module.config(function($translateProvider) {
-    $translateProvider.preferredLanguage('en');
+    $translateProvider
+      .fallbackLanguage('en')
+      .preferredLanguage('en');
   });
 }());
