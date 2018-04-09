@@ -858,8 +858,62 @@
           var osmService = new ol.source.OSM(osmSource);
           // The source will only have the one url in the first index
           var osmUrl = useProxyUrlParam(getUseProxyParam(server), osmService.getUrls()[0]);
-          // OSM source doesn' want the url encoded
-          osmService.setUrl(decodeURIComponent(osmUrl));
+          // OSM source doesn't want the url encoded
+          // OSM requires special encoding due to variable url
+          var encodeOSMUrl = function(osmUrl) {
+            // OSM source doesn't want the url encoded, make sure it is decoded
+            osmUrl = decodeURIComponent(osmUrl);
+            // Error check: don't encode osmUrl if it's not proxied
+            if (osmUrl.indexOf(configService_.configuration.proxy) < 0) {
+              return osmUrl;
+            }
+            // Must remove proxy from the url and add it back unencoded at the end
+            osmUrl = osmUrl.replace(configService_.configuration.proxy, '');
+
+            // Separate out parts that cannot be encoded, and only encode what is necessary
+            // osmUrl is regex with the following pattern:
+            // https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}
+            // parse out all {}, and only encoed non-bracket pieces
+            var openBracketIndex, closedBracketIndex, encodedOSMUrl = '';
+            while (osmUrl.indexOf('{') > -1) {
+              openBracketIndex = osmUrl.indexOf('{');
+              closedBracketIndex = osmUrl.indexOf('}');
+              // if the closed bracket comes before the open bracket, something has gone wrong
+              if (closedBracketIndex > openBracketIndex) {
+                // encode up to the open bracket
+                encodedOSMUrl += encodeURIComponent(osmUrl.substring(0, openBracketIndex));
+                // don't encode what's in the brackets
+                encodedOSMUrl += osmUrl.substring(openBracketIndex, closedBracketIndex + 1);
+                osmUrl = osmUrl.substring(closedBracketIndex + 1);
+              } else {
+                // TODO: what do we do if this happens?
+                // for now just skipping to next
+                osmUrl = osmUrl.substring(closedBracketIndex + 1);
+                // alert the user something went wrong
+                console.log('WARNING: A closing bracket } preceded an opening bracket { in url: ' + osmUrl);
+                // prevent infinite loop potential with dangling open bracket
+                if (osmUrl.indexOf('}') == -1 && osmUrl.indexOf('{') > -1) {
+                  osmUrl = osmUrl.substring(openBracketIndex + 1);
+                }
+              }
+            }
+            // TODO: What to do if there's dangling closed bracket?
+            if (osmUrl.indexOf('}') > -1) {
+              // alert the user something went wrong
+              console.log('WARNING: A dangling closed bracket } was in url: ' + osmUrl);
+            }
+            // encode anything remaining
+            encodedOSMUrl += encodeURIComponent(osmUrl);
+            return configService_.configuration.proxy + encodedOSMUrl;
+          };
+          // Only encode the OSM url if it's being proxied
+          var encodedOsmUrl;
+          if (osmUrl.indexOf(configService_.configuration.proxy) > -1) {
+            encodedOsmUrl = encodeOSMUrl(osmUrl);
+          } else {
+            encodedOsmUrl = osmUrl;
+          }
+          osmService.setUrl(encodedOsmUrl);
           layer = new ol.layer.Tile({
             metadata: {
               serverId: server.id,
