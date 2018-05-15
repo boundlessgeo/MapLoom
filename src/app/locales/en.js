@@ -371,7 +371,8 @@
     'style_layer_failed': 'There was an error trying to update {{ style_name }}.sld, please try again later.',
     'show_style_editor': 'Show Style Editor',
     'style_name': 'Style Name',
-    'save_layer_style': 'Save Layer Style'
+    'save_layer_style': 'Save Layer Style',
+    'refresh_interval': 'Refresh Interval'
   };
 
   var module = angular.module('loom_translations_en', ['pascalprecht.translate']);

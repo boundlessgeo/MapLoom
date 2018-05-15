@@ -10,10 +10,11 @@
   var featureDiffService_ = null;
   var service_ = null;
   var timeout_ = null;
+  var log_ = null;
 
   module.provider('refreshService', function() {
     this.$get = function(mapService, $translate, notificationService, geogigService, historyService,
-        dialogService, featureDiffService) {
+        dialogService, featureDiffService, $log) {
       mapService_ = mapService;
       notificationService_ = notificationService;
       geogigService_ = geogigService;
@@ -21,15 +22,14 @@
       dialogService_ = dialogService;
       translate_ = $translate;
       featureDiffService_ = featureDiffService;
+      log_ = $log;
 
       service_ = this;
-
-      this.refresh_interval = mapService_.refresh_interval || 60000;
 
       //this is called here to turn refresh on by default
       timeout_ = setTimeout(function() {
         refresh(mapService);
-      }, this.refresh_interval);
+      }, mapService_.refresh_interval);
 
       return this;
     };
@@ -42,8 +42,8 @@
         var refreshed = {};
         var notRefreshed = {};
         var layers = mapService.getLayers(true, true);
-        var refreshTimeout = this.refresh_interval;
-
+        var refreshTimeout = mapService_.refresh_interval;
+        log_.debug('Map Refresh Interval ' + refreshTimeout);
         if (!goog.isDefAndNotNull(layers)) {
           if (goog.isDefAndNotNull(timeout_)) {
             clearTimeout(timeout_);
