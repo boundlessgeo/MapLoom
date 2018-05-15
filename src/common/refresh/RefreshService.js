@@ -24,10 +24,12 @@
 
       service_ = this;
 
+      this.refresh_interval = mapService_.refresh_interval || 60000;
+
       //this is called here to turn refresh on by default
       timeout_ = setTimeout(function() {
         refresh(mapService);
-      }, 60000);
+      }, this.refresh_interval);
 
       return this;
     };
@@ -40,7 +42,7 @@
         var refreshed = {};
         var notRefreshed = {};
         var layers = mapService.getLayers(true, true);
-        var refreshTimeout = 60000;
+        var refreshTimeout = this.refresh_interval;
 
         if (!goog.isDefAndNotNull(layers)) {
           if (goog.isDefAndNotNull(timeout_)) {
@@ -220,6 +222,7 @@
               nextLayer(nextIndex);
             }
           } else {
+            mapService.dumpTileCache(metadata.uniqueID);
             nextLayer(nextIndex);
           }
         };

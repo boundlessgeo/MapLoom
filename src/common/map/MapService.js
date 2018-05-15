@@ -201,6 +201,7 @@
       //this.configuration = configService_.configuration;
       this.title = configService_.configuration.about.title;
       this.abstract = configService_.configuration.about.abstract;
+      this.refresh_interval = configService_.configuration.about.refresh_interval;
       this.id = configService_.configuration.id;
       this.save_method = 'POST';
 
@@ -1371,7 +1372,8 @@
       var cfg = {
         about: {
           abstract: service_.abstract,
-          title: service_.title
+          title: service_.title,
+          refresh_interval: service_.refresh_interval * 1000
         },
         map: {
           id: service_.id || 0,

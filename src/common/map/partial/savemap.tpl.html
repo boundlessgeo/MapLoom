@@ -10,6 +10,9 @@
                 <label for="mapAbstract">{{ 'abstract' | translate }}</label><textarea id="mapAbstract" ng-model="mapService.abstract" class="form-control" rows="4">mapService.abstract}}</textarea>
             </div>
 
+            <div class="form-group">
+                <label for="mapRefresh">{{ 'refresh_interval' | translate }}</label><input id="mapRefresh" ng-model="mapService.refresh_interval" class="form-control" type="number" value="{{mapService.refresh_interval}}" placeholder="{{mapService.refresh_interval}}">
+            </div>
         </div>
     </form>
 </div>
@@ -33,5 +36,3 @@
     </div>
   </div>
 </div>
-
-
