@@ -1373,7 +1373,7 @@
         about: {
           abstract: service_.abstract,
           title: service_.title,
-          refresh_interval: service_.refresh_interval
+          refresh_interval: parseInt(service_.refresh_interval, 10)
         },
         map: {
           id: service_.id || 0,
