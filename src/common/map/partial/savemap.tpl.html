@@ -13,7 +13,7 @@
             <div class="form-group">
                 <label for="mapRefresh">{{ 'refresh_interval' | translate }}</label>
                 <select id="mapRefresh" class="form-control" ng-model="mapService.refresh_interval">
-                  <option ng-repeat="option in availableIntervals" value="{{option.value}}">{{option.description}}</option>
+                  <option ng-selected="mapService.refresh_interval == option.value" ng-repeat="option in availableIntervals" value="{{option.value}}">{{option.description}}</option>
                 </select>
             </div>
         </div>
