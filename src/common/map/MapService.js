@@ -881,7 +881,10 @@
           // This arc service does not support tiled maps, so this will
           // use the arc image service instead...
           serviceSource = new ol.source.TileArcGISRest({
-            url: rest_url
+            url: rest_url,
+            params: {
+              'LAYERS': 'show:' + fullConfig.id
+            }
           });
 
           // patch the web mercator projection.
