@@ -372,7 +372,6 @@
     'username' : 'Username',
     'add_comment' : 'Add Comment',
     'comments_enabled' : 'Comments Enabled',
-    'bounding_box' : 'Cuadro Delimitador',
     'comment_acknowledge': 'I acknowledge that my comment goes to a queue and won\'t appear on the map until approved by PPACG staff',
     'bounding_box' : 'Cuadro Delimitador',
     'too_many_filters' : 'Es posible que tenga demasiados filtros seleccionados. Prueba a eliminar una de las siguientes:',
