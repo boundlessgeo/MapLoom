@@ -115,11 +115,25 @@
     };
 
     this.getMediaUrl = function(mediaItem) {
-      var url = mediaItem;
-      // if the item doesn't start with 'http' then assume the item can be found in the fileservice and so convert it to
+      /*jshint -W061 */
+      var url;
+      try {
+        url = eval(mediaItem);
+      } catch (err) {
+        url = mediaItem;
+      }
+      // if the item doesn't start with 'http' then assume the item is base64 encoded or can be found in the fileservice and so convert it to
       // a url. This means if the item is, say, at https://mysite.com/mypic.jpg, leave it as is
       if (goog.isString(mediaItem) && mediaItem.indexOf('http') === -1) {
-        url = configService_.configuration.fileserviceUrlTemplate.replace('{}', mediaItem);
+        try {
+          if (url.indexOf('data:image') != -1) {
+
+          } else if (window.atob(url)) {
+            url = 'data:image/jpeg;base64,'.concat(url);
+          }
+        } catch (err) {
+          url = configService_.configuration.fileserviceUrlTemplate.replace('{}', url);
+        }
       }
       return url;
     };
@@ -322,7 +336,7 @@
           // note that another service may make a fake feature selection on a layer not in mapservice.
           // checking to make sure it had a geometry before making assumptions about edit layer etc
           if (goog.isDefAndNotNull(selectedItem_.geometry)) {
-            mapService_.addToEditLayer(selectedItem_.geometry, selectedLayer_.get('metadata').projection);
+            mapService_.addToEditLayer(selectedItem_.geometry, mapService_.map.getView().getProjection());
             position = getNewPositionFromGeometry(mapService_.editLayer.getSource().getFeatures()[0].getGeometry(),
                 clickPosition_);
           }
@@ -664,7 +678,7 @@
             property[1] = null;
           }
           if (properties[index][1] !== selectedItemProperties_[index][1]) {
-            propertyXmlPartial += '<feature:' + property[0] + '>' + (property[1] === null ? '' : property[1]) +
+            propertyXmlPartial += '<feature:' + property[0] + '>' + (property[1] === null ? '' : escapeXml(property[1])) +
                 '</feature:' + property[0] + '>';
           }
         });
@@ -880,7 +894,7 @@
             var stringy = JSON.stringify(newArray);
             if (stringy !== selectedItemProperties_[index][1]) {
               propertyXmlPartial += '<wfs:Property><wfs:Name>' + property[0] +
-                  '</wfs:Name><wfs:Value>' + (stringy === null ? '' : stringy) + '</wfs:Value></wfs:Property>';
+                  '</wfs:Name><wfs:Value>' + (stringy === null ? '' : escapeXml(stringy)) + '</wfs:Value></wfs:Property>';
             }
           } else {
             if (property[1] === '') {
@@ -888,7 +902,7 @@
             }
             if (properties[index][1] !== selectedItemProperties_[index][1]) {
               propertyXmlPartial += '<wfs:Property><wfs:Name>' + property[0] +
-                  '</wfs:Name><wfs:Value>' + (property[1] === null ? '' : property[1]) + '</wfs:Value></wfs:Property>';
+                  '</wfs:Name><wfs:Value>' + (property[1] === null ? '' : escapeXml(property[1])) + '</wfs:Value></wfs:Property>';
             }
           }
         });
@@ -1076,7 +1090,57 @@
 
           httpService_.get(url).then(function(response) {
             var layerInfo = {};
-            layerInfo.features = response.data.features;
+
+            var crs = response.data.crs;
+            var features = response.data.features;
+            if (crs !== undefined && crs !== null && crs.type === 'name' && crs.properties.name.indexOf('EPSG') >= 0) {
+              var proj = ol.proj.get('EPSG:' + crs.properties.name.split('::')[1]);
+              // reproject the features
+              if (proj && proj.code_ !== mapService_.map.getView().getProjection().code_) {
+                var default_geometry_name = response.data.features[0].geometry_name;
+                var parser = new ol.format.GeoJSON();
+                // consume the features and convert them to the map projection.
+                var ol_features = parser.readFeatures(response.data, {
+                  dataProjection: proj,
+                  featureProjection: mapService_.map.getView().getProjection()
+                });
+                // emit the features as an object.
+                features = (parser.writeFeaturesObject(ol_features)).features;
+
+                // OL will drop the geometry_name property, make sure we add it back.
+                features.forEach(function(f) {
+                  if (f.geometry_name === null || f.geometry_name === undefined) {
+                    f.geometry_name = default_geometry_name;
+                  }
+                });
+              }
+            }
+
+            // ESRI will return XML if an unknown mime-type is given to it,
+            // and it does not understand application/json.
+            if (typeof response.data === 'string' && response.data.indexOf('http://www.esri.com/wms') >= 0) {
+              var xml_parser = new DOMParser();
+              var xml_doc = xml_parser.parseFromString(response.data, 'text/xml');
+
+              features = [];
+              var fields = xml_doc.getElementsByTagName('FIELDS');
+              for (var i = 0, ii = fields.length; i < ii; i++) {
+                var props = {};
+                for (var p = 0, pp = fields[i].attributes.length; p < pp; p++) {
+                  var attr = fields[i].attributes[p].name;
+                  var value = fields[i].getAttribute(attr);
+                  props[attr] = value;
+                }
+
+                features.push({
+                  type: 'Feature',
+                  geometry: null,
+                  properties: props
+                });
+              }
+            }
+
+            layerInfo.features = features;
 
             if (layerInfo.features && layerInfo.features.length > 0 && goog.isDefAndNotNull(layers[index])) {
               layerInfo.layer = layers[index];
@@ -1113,7 +1177,7 @@
     var wfsRequestTypePartial;
     var commitMsg;
     if (postType === wfsPostTypes_.INSERT) {
-      var featureType = selectedLayer_.get('metadata').name.split(':')[1];
+      var featureType = selectedLayer_.get('metadata').name.split(':')[1] || selectedLayer_.get('metadata').name;
       commitMsg = translate_.instant('added_1_feature', {'layer': selectedLayer_.get('metadata').nativeName});
       wfsRequestTypePartial = '<wfs:Insert handle="' + commitMsg +
           '"><feature:' + featureType + ' xmlns:feature="' + selectedLayer_.get('metadata').workspaceURL + '">' +

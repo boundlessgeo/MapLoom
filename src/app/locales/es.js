@@ -373,7 +373,15 @@
     'add_comment' : 'Add Comment',
     'comments_enabled' : 'Comments Enabled',
     'bounding_box' : 'Cuadro Delimitador',
-    'comment_acknowledge': 'I acknowledge that my comment goes to a queue and won\'t appear on the map until approved by PPACG staff'
+    'comment_acknowledge': 'I acknowledge that my comment goes to a queue and won\'t appear on the map until approved by PPACG staff',
+    'bounding_box' : 'Cuadro Delimitador',
+    'too_many_filters' : 'Es posible que tenga demasiados filtros seleccionados. Prueba a eliminar una de las siguientes:',
+    'style_layer': 'Style Layer',
+    'style_name': 'Style Name',
+    'style_layer_failed': 'Se ha producido un error desconocido al sincronizar {{ style_name }}.sld. Por favor, inténtelo de nuevo.',
+    'save_layer_style': 'Save Layer Style',
+    'show_style_editor': 'Show Style Editor',
+    'refresh_interval': 'Refresh Interval'
   };
 
   var module = angular.module('loom_translations_es', ['pascalprecht.translate']);

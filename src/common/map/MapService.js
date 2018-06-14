@@ -202,6 +202,7 @@
       this.title = configService_.configuration.about.title;
       this.abstract = configService_.configuration.about.abstract;
       this.commentsEnabled = false;
+      this.refresh_interval = configService_.configuration.about.refresh_interval || 60000;
       this.id = configService_.configuration.id;
       this.save_method = 'POST';
 
@@ -310,7 +311,7 @@
 
     this.zoomToExtent = function(extent, animate, map, scale) {
       if (!goog.isDefAndNotNull(animate)) {
-        animate = true;
+        animate = false;
       }
       if (!goog.isDefAndNotNull(map)) {
         map = this.map;
@@ -347,6 +348,69 @@
       }
 
       view.fit(extent, map.getSize());
+    };
+
+    this.updateStyle = function(layer) {
+      var maybe_rename_style = function(layer, xml) {
+        var name = layer.get('metadata').defaultStyle.name;
+        if (['generic', 'polygon', 'point', 'line', 'raster'].includes(name)) {
+          var new_name = layer.get('metadata').name + '_' + name;
+          console.log('Creating the style so that is it unique ', new_name);
+          httpService_({
+            url: '/gs/rest/styles?name=' + new_name,
+            method: 'POST',
+            data: xml,
+            headers: { 'Content-Type': 'application/vnd.ogc.sld+xml' }
+          }).then(function(response) {
+            var default_req_body = '<layer><defaultStyle><name>' + new_name + '</name></defaultStyle></layer>';
+            httpService_({
+              url: '/gs/rest/layers/' + layer.get('metadata').name,
+              method: 'PUT',
+              data: default_req_body,
+              headers: { 'Content-Type': 'text/xml' }
+            }).then(function(response) {
+              console.log('Style has been set as the default, ', new_name);
+              layer.get('metadata').defaultStyle.name = new_name;
+            }, function errorCallback(response) {
+              console.log('Setting Default Style Error Response ', response);
+            });
+
+          }, function errorCallback(response) {
+            console.log('Style Create Error Response ', response);
+          });
+        }
+      };
+
+      var deferredResponse = q_.defer();
+      var style = layer.get('style') || layer.get('metadata').style || '';
+      var isComplete = new storytools.edit.StyleComplete.StyleComplete().isComplete(style);
+      if (isComplete && goog.isDefAndNotNull(layer.getSource) && layer.get('metadata').defaultStyle) {
+        var layerSource = layer.getSource();
+        if (goog.isDefAndNotNull(layerSource) && goog.isDefAndNotNull(layerSource.getParams)) {
+          var sld = new storytools.edit.SLDStyleConverter.SLDStyleConverter();
+          var xml = sld.generateStyle(style, layer.getSource().getParams().LAYERS, true);
+
+          maybe_rename_style(layer, xml);
+
+          httpService_({
+            url: '/gs/rest/styles/' + layer.get('metadata').defaultStyle.name + '.xml',
+            method: 'PUT',
+            data: xml,
+            headers: {'Content-Type': 'application/vnd.ogc.sld+xml'}
+          }).then(function(result) {
+            if (goog.isDefAndNotNull(layerSource.updateParams)) {
+              layerSource.updateParams({'_dc': new Date().getTime(), '_olSalt': Math.random()});
+            }
+            rootScope_.$broadcast('layers-styled');
+            deferredResponse.resolve();
+          }, function(data, status, headers, config) {
+            deferredResponse.reject(status);
+          });
+        }
+      } else {
+        deferredResponse.reject('style information is incomplete.');
+      }
+      return deferredResponse.promise;
     };
 
     this.zoomToLayerFeatures = function(layer) {
@@ -428,12 +492,16 @@
 
     this.zoomToLayerExtent = function(layer) {
       var metadata = layer.get('metadata');
+      // determine the CRS based on the metadata available.
+      var layer_crs = metadata.bbox.crs ? metadata.bbox.crs : metadata.bbox.extent.crs;
+
       var shrinkExtent = function(extent, shrink) {
-        var newExtent = extent;
+        // differences between GeoServer 2.11 / 2.12
+        var newExtent = Array.isArray(extent) ? extent : extent.extent;
 
         // If the extent is null, make a new one while shrinking based on factor
         if (!goog.isDefAndNotNull(extent) && goog.isDefAndNotNull(metadata) &&
-            goog.isDefAndNotNull(metadata.bbox.crs)) {
+            goog.isDefAndNotNull(layer_crs)) {
           newExtent = goog.array.clone(metadata.bbox.extent);
           var yDelta = (newExtent[3] - newExtent[1]) * shrink;
           var xDelta = (newExtent[2] - newExtent[0]) * shrink;
@@ -444,8 +512,9 @@
         }
 
         // Create transform and project to current map
-        var transform = ol.proj.getTransformFromProjections(ol.proj.get(metadata.bbox.crs),
+        var transform = ol.proj.getTransformFromProjections(ol.proj.get(layer_crs),
             service_.map.getView().getProjection());
+
         newExtent = ol.extent.applyTransform(newExtent, transform);
 
         return newExtent;
@@ -599,7 +668,6 @@
     };
 
     this.createLayerFull = function(minimalConfig, fullConfig, server, opt_layerOrder) {
-
       // download missing projection projection if we don't have it
       if (goog.isDefAndNotNull(fullConfig)) {
         var projcode = service_.getCRSCode(fullConfig.CRS);
@@ -640,6 +708,7 @@
       var layer = null;
       var nameSplit = null;
       var url = null;
+      var bbox;
       if (!goog.isDefAndNotNull(fullConfig)) {
         //dialogService_.error(translate_.instant('map_layers'), translate_.instant('load_layer_failed',
         //    {'layer': minimalConfig.name}), [translate_.instant('btn_ok')], false);
@@ -658,6 +727,69 @@
         });
       } else {
         if (fullConfig.type && fullConfig.type == 'mapproxy_tms') {
+          var src = new ol.source.XYZ({
+            url: fullConfig.detail_url
+          });
+
+          // do not try to offer a GetFeatureInfo call if there
+          //  is not a valid legend_url
+          if (goog.isDefAndNotNull(fullConfig.legend_url)) {
+            src.getGetFeatureInfoUrl = function(coordinate, resolution, projection, params) {
+              var legend_split = fullConfig.legend_url.split('?');
+              // pull the root-service URL from the legend url
+              var wms_url = legend_split[0];
+
+              // pull the layer name from the legend request
+              var layer_name = null;
+              var unparsed_params = legend_split[1].split('&');
+              for (var i = 0, ii = unparsed_params.length; i < ii && layer_name === null; i++) {
+                var param = unparsed_params[i].split('=');
+                if (param[0] === 'LAYER') {
+                  layer_name = param[1];
+                }
+              }
+
+              if (layer_name === null) {
+                layer_name = fullConfig.Title;
+              }
+
+              var extent = ol.extent.getForViewAndSize(
+                  coordinate, resolution, 0,
+                  ol.source.ImageWMS.GETFEATUREINFO_IMAGE_SIZE_);
+
+              var srs = projection.getCode();
+              if (srs === 'EPSG:900913') {
+                srs = 'EPSG:3857';
+              }
+
+              var baseParams = {
+                'SERVICE': 'WMS',
+                'VERSION': '1.1.1',
+                'REQUEST': 'GetFeatureInfo',
+                'TRANSPARENT': true,
+                'LAYERS' : layer_name,
+                'QUERY_LAYERS': layer_name,
+                'BBOX' : extent.join(','),
+                'WIDTH': ol.source.ImageWMS.GETFEATUREINFO_IMAGE_SIZE_[0],
+                'HEIGHT': ol.source.ImageWMS.GETFEATUREINFO_IMAGE_SIZE_[1],
+                'SRS': srs
+              };
+              goog.object.extend(baseParams, params);
+
+              var x = Math.floor((coordinate[0] - extent[0]) / resolution);
+              var y = Math.floor((extent[3] - coordinate[1]) / resolution);
+              baseParams['X'] = x;
+              baseParams['Y'] = y;
+
+              var join_char = '?';
+              for (var key in baseParams) {
+                wms_url += join_char + key + '=' + encodeURIComponent(baseParams[key]);
+                join_char = '&';
+              }
+              return wms_url;
+            };
+          }
+
           layer = new ol.layer.Tile({
             metadata: {
               name: minimalConfig.name,
@@ -673,10 +805,8 @@
                 crs: service_.getCRSCode(fullConfig.CRS)
               }
             },
-            visible: true,
-            source: new ol.source.XYZ({
-              url: fullConfig.detail_url
-            })
+            visible: minimalConfig.visibility,
+            source: src
           });
         } else if (server.ptype === 'gxp_osmsource') {
           var osmLocal = {
@@ -744,16 +874,82 @@
           } else {
             console.log('====[ Error: could not create base layer.');
           }
+        } else if (server.ptype === 'gxp_arcrestsource' && server.restConfig.capabilities.indexOf('Tilemap') < 0) {
+          // ensure the trailing slash is set.
+          var rest_url = server.url;
+          if (rest_url.substring(rest_url.length - 1) !== '/') {
+            rest_url += '/';
+          }
+          // This arc service does not support tiled maps, so this will
+          // use the arc image service instead...
+          serviceSource = new ol.source.TileArcGISRest({
+            url: rest_url
+          });
+
+          // patch the web mercator projection.
+          serviceSource.tileUrlFunction = function(tileCoord, pixelRatio, projection) {
+            var rest_proj = projection;
+            if (rest_proj.getCode() === 'EPSG:900913') {
+              rest_proj = ol.proj.get('EPSG:3857');
+            }
+            return this.fixedTileUrlFunction(tileCoord, pixelRatio, rest_proj);
+          };
+
+          if (fullConfig.bbox_left) {
+            bbox = {
+              crs: server.CRS,
+              extent: [
+                fullConfig.bbox_left,
+                fullConfig.bbox_bottom,
+                fullConfig.bbox_right,
+                fullConfig.bbox_top
+              ]
+            };
+          } else {
+            bbox = fullConfig.extent;
+          }
+
+          layer = new ol.layer.Tile({
+            metadata: {
+              serverId: server.id,
+              name: minimalConfig.name,
+              bbox: bbox,
+              title: fullConfig.title
+            },
+            visible: minimalConfig.visibility,
+            source: serviceSource
+          });
         } else if (server.ptype === 'gxp_arcrestsource') {
+          if (fullConfig.bbox_left) {
+            bbox = {
+              crs: server.CRS,
+              extent: [
+                fullConfig.bbox_left,
+                fullConfig.bbox_bottom,
+                fullConfig.bbox_right,
+                fullConfig.bbox_top
+              ]
+            };
+          } else {
+            bbox = fullConfig.extent;
+          }
+
           var metadata = {
             serverId: server.id,
             name: minimalConfig.name,
+            bbox: bbox,
             title: fullConfig.Title
           };
           var attribution = new ol.Attribution({
             html: 'Tiles &copy; <a href="' + server.url + '">ArcGIS</a>'
           });
-          var serviceUrl = server.url + 'tile/{z}/{y}/{x}';
+
+          // ensure the trailing slash is set.
+          url = server.url;
+          if (url.substring(url.length - 1) !== '/') {
+            url += '/';
+          }
+          var serviceUrl = url + 'tile/{z}/{y}/{x}';
           var serviceSource = null;
           if (server.proj === 'EPSG:4326') {
             var projection = ol.proj.get('EPSG:4326');
@@ -785,7 +981,6 @@
             visible: minimalConfig.visibility,
             source: serviceSource
           });
-
         } else if (server.ptype === 'gxp_tilejsonsource') {
           //currently we assume only one layer per 'server'
           var jsontile_source = server.layersConfig[0].TileJSONSource;
@@ -823,7 +1018,7 @@
           }
 
         } else if (server.ptype === 'gxp_wmscsource') {
-          nameSplit = fullConfig.Name.split(':');
+          nameSplit = (fullConfig.Name || fullConfig.name).split(':');
 
           // favor virtual service url when available
           var mostSpecificUrl = server.url;
@@ -840,6 +1035,65 @@
             }
           }
 
+          if (goog.isArray(fullConfig.BoundingBox)) {
+            bbox = {extent: fullConfig.BoundingBox[0]};
+          } else if (goog.isArray(fullConfig.extent)) {
+            bbox = {
+              extent: fullConfig.extent,
+              crs: fullConfig.CRS[0]
+            };
+          } else if (goog.isArray(minimalConfig.bbox)) {
+            bbox = {
+              extent: minimalConfig.bbox,
+              crs: 'EPSG:900913'
+            };
+          }
+
+          var source_params = {
+            'LAYERS': fullConfig.typeName || minimalConfig.name,
+            'tiled': 'true'
+          };
+
+          if (server.version !== undefined) {
+            source_params['VERSION'] = server.version;
+          }
+
+          var tilewms_source = new ol.source.TileWMS({
+            url: mostSpecificUrlWms,
+            params: source_params
+          });
+
+
+          if (server.override_crs !== undefined) {
+            // make a projection for the override crs
+            tilewms_source._projection = new ol.proj.Projection({
+              code: server.override_crs
+            });
+          }
+
+          if (server.remote === true) {
+            tilewms_source._isRemote = true;
+          }
+
+          // WARNING! this is a monkey-patch for the ancient verison
+          //  of openlayers which MapLoom required as of 18 Jan 2018
+
+          // Store the original function
+          tilewms_source._getRequestUrl_ = tilewms_source.getRequestUrl_;
+
+          tilewms_source.getRequestUrl_ = function(tileCoord, tileSize, tileExtent, pixelRatio, projection, params) {
+            // manually override the projection
+            var proj = this._projection !== undefined ? this._projection : projection;
+
+            var url = this._getRequestUrl_(tileCoord, tileSize, tileExtent, pixelRatio, proj, params);
+
+            if (this._isRemote === true) {
+              url = configService_.configuration.proxy + encodeURIComponent(url);
+            }
+
+            return url;
+          };
+
           layer = new ol.layer.Tile({
             metadata: {
               serverId: server.id,
@@ -851,19 +1105,14 @@
               workspace: nameSplit.length > 1 ? nameSplit[0] : '',
               readOnly: false,
               editable: false,
-              bbox: (goog.isArray(fullConfig.BoundingBox) ? fullConfig.BoundingBox[0] : fullConfig.BoundingBox),
+              bbox: bbox,
               projection: service_.getCRSCode(fullConfig.CRS),
               savedSchema: minimalConfig.schema,
               dimensions: fullConfig.Dimension
             },
+            projection: server.override_crs,
             visible: minimalConfig.visibility,
-            source: new ol.source.TileWMS({
-              url: mostSpecificUrlWms,
-              params: {
-                'LAYERS': minimalConfig.name,
-                'tiled': 'true'
-              }
-            })
+            source: tilewms_source
           });
 
           // Test if layer is read-only
@@ -901,15 +1150,52 @@
               };
               wfsReqConfig.headers = serverService_.getWfsRequestHeaders(server);
 
-              httpService_.post(wfsurl, wfsRequestData, wfsReqConfig)
+              return httpService_.post(wfsurl, wfsRequestData, wfsReqConfig)
               .success(_handlePostResponse);
 
             };
-            geogigService_.isGeoGig(layer, server, fullConfig).then(function() {
-              testReadOnly();
-            }, function() {
-              testReadOnly();
+            var geogigPromise;
+            // Skip the WFS feature check for remote services.
+            if (server.remote === true) {
+              geogigPromise = q_.defer();
+              geogigPromise.resolve(true);
+            } else {
+              geogigPromise = geogigService_.isGeoGig(layer, server, fullConfig).then(function() {
+                return testReadOnly();
+              }, function() {
+                return testReadOnly();
+              });
+            }
+
+            var layerName = layer.getSource().getParams()['LAYERS'] || layer.getSource().getParams()['layers'];
+
+            // Fetch the Exchange layer metadata
+            var exchangePromise = httpService_.get('/layers/' + layerName + '/get').success(function(response) {
+              response.attributes = _.sortBy(response.attributes, 'display_order');
+              layer.set('exchangeMetadata', response);
             });
+
+            var gsStylePromise = httpService_.get('/gs/rest/layers/' + layerName + '.json').success(function(response) {
+              if (goog.isDefAndNotNull(response.layer) && goog.isDefAndNotNull(response.layer.defaultStyle)) {
+                layer.get('metadata').defaultStyle = response.layer.defaultStyle;
+              }
+              if (goog.isDefAndNotNull(response.layer) && goog.isDefAndNotNull(response.layer.styles)) {
+                layer.get('metadata').styles = response.layer.styles;
+              }
+            });
+
+            q_.all([geogigPromise, exchangePromise, gsStylePromise]).then(function(data) {
+              _.each(layer.get('metadata').schema, function(schemaAttribute) {
+                var exchangeMetadata = layer.get('exchangeMetadata');
+                if (goog.isDefAndNotNull(exchangeMetadata) && goog.isDefAndNotNull(exchangeMetadata.attributes)) {
+                  var exchangeAttribute = _.find(exchangeMetadata.attributes, { attribute: schemaAttribute._name });
+                  if (goog.isDefAndNotNull(exchangeAttribute)) {
+                    schemaAttribute.visible = exchangeAttribute.visible;
+                  }
+                }
+              });
+            });
+
           }
         } else if (server.ptype === 'gxp_tmssource') {
           nameSplit = fullConfig.Name.split(':');
@@ -986,6 +1272,9 @@
         var mapLayers = this.map.getLayerGroup().getLayers().getArray();
         meta.layerOrder = goog.isDefAndNotNull(opt_layerOrder) ? opt_layerOrder : mapLayers.length;
 
+        // add the workspace
+        meta.workspace = minimalConfig.workspace;
+
         // the first registry layer gets added beneath the base map.
         // this prevents that.
         if (meta.registry && meta.layerOrder === 1) {
@@ -1049,8 +1338,10 @@
       goog.object.extend(params, hash_view);
 
       if (configService_.configuration.map.projection === 'EPSG:4326') {
+        params['extent'] = [-180.0000, -90.0000, 180.0000, 90.0000];
         params['minZoom'] = 3;
       } else {
+        params['extent'] = [-20026376.39, -20048966.10, 20026376.39, 20048966.10];
         params['maxResolution'] = 40075016.68557849 / 2048;
       }
       return params;
@@ -1105,7 +1396,8 @@
       var cfg = {
         about: {
           abstract: service_.abstract,
-          title: service_.title
+          title: service_.title,
+          refresh_interval: parseInt(service_.refresh_interval, 10)
         },
         map: {
           id: service_.id || 0,

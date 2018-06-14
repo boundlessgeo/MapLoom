@@ -1,7 +1,7 @@
 {
   "author": "Prominent Edge",
   "name": "MapLoom",
-  "version": "1.5.60",
+  "version": "1.5.134",
   "homepage": "http://www.prominentedge.com",
   "licenses": {
     "type": "BSD",
@@ -15,8 +15,8 @@
   "scripts": {
     "test": "grunt karma"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@boundlessgeo/storytools": "^1.0.0-alpha9",
     "closure-linter-wrapper": "~0.2.8",
     "grunt": "~0.4.1",
     "grunt-bump": "0.0.7",

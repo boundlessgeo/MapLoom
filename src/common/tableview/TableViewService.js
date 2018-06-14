@@ -273,6 +273,11 @@
         }
       }
 
+      var typeName = metadata.name;
+      if (!typeName.startsWith(metadata.workspace + ':')) {
+        typeName = metadata.workspace + ':' + metadata.name;
+      }
+
       var xml = '';
       if (!goog.isDefAndNotNull(exclude_header) || exclude_header === false) {
         xml += '<?xml version="1.0" encoding="UTF-8"?>';
@@ -286,7 +291,7 @@
           ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"' +
           ' xsi:schemaLocation="http://www.opengis.net/wfs' +
           ' http://schemas.opengis.net/wfs/1.1.0/wfs.xsd">' +
-          '<wfs:Query typeName="' + metadata.name + '"' +
+          '<wfs:Query typeName="' + typeName + '"' +
           ' srsName="' + 'EPSG:3857' + '"' +
           //' srsName="' + metadata.projection + '"' +
           '>';
@@ -368,6 +373,14 @@
             return;
           }
           service_.readOnly = false;
+
+          function convertExchangeOptionToSchemaOption(option) {
+            return {
+              _value: option.value,
+              _label: option.label
+            };
+          }
+
           for (var attrIndex in service_.attributeNameList) {
             var attr = service_.attributeNameList[attrIndex];
             var attrRestriction = {type: '', nillable: true};
@@ -400,6 +413,15 @@
 
             attrRestriction.nillable = metadata.schema[attr.name]._nillable;
 
+            // Use the Exchange metadata options if it exists
+            if (!_.isNil(service_.selectedLayer) && !_.isNil(service_.selectedLayer.get('exchangeMetadata')) &&
+                !_.isNil(service_.selectedLayer.get('exchangeMetadata').attributes)) {
+              var exchangeAttribute = _.find(service_.selectedLayer.get('exchangeMetadata').attributes, { 'attribute': attr.name });
+              if (!_.isNil(exchangeAttribute) && _.isArray(exchangeAttribute.options) && !_.isEmpty(exchangeAttribute.options)) {
+                attrRestriction.type = _.map(exchangeAttribute.options, convertExchangeOptionToSchemaOption);
+              }
+            }
+
             service_.restrictionList[attr.name] = attrRestriction;
           }
         };
@@ -418,6 +440,22 @@
             }
             service_.attributeNameList.push({name: propName, filter: metadata.filters[propName]});
           }
+        }
+        // Filter out hidden attributes
+        service_.attributeNameList = _.filter(service_.attributeNameList, function(prop) {
+          // if there is no schema, show the attribute. only filter out if there is schema and attr is set to hidden
+          if (!goog.isDefAndNotNull(metadata.schema) || !metadata.schema.hasOwnProperty(prop.name)) {
+            return true;
+          }
+
+          return metadata.schema[prop.name].visible;
+        });
+        // Use the Exchange metadata display_order if it exists
+        if (!_.isNil(service_.selectedLayer) && !_.isNil(service_.selectedLayer.get('exchangeMetadata')) &&
+            !_.isNil(service_.selectedLayer.get('exchangeMetadata').attributes)) {
+          service_.attributeNameList = _.sortBy(service_.attributeNameList, function(prop) {
+            return _.find(service_.selectedLayer.get('exchangeMetadata').attributes, { 'attribute': prop.name }).display_order;
+          });
         }
         service_.totalFeatures = data.totalFeatures;
         service_.totalPages = Math.ceil(service_.totalFeatures / service_.resultsPerPage);

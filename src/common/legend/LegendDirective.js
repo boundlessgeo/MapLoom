@@ -13,6 +13,7 @@
           link: function(scope, element) {
             scope.mapService = mapService;
             scope.serverService = serverService;
+            scope.legendTime = (new Date()).getTime();
 
             var openLegend = function() {
               angular.element('#legend-container')[0].style.visibility = 'visible';
@@ -31,9 +32,7 @@
 
             scope.toggleLegend = function() {
               if (legendOpen === false) {
-                if (angular.element('.legend-item').length > 0) {
-                  openLegend();
-                }
+                openLegend();
               } else {
                 closeLegend();
               }
@@ -72,7 +71,11 @@
               }
 
               try {
-                serverService.getServerById(layer.get('metadata').serverId);
+                var server = serverService.getServerById(layer.get('metadata').serverId);
+                // WMS only.
+                if (server.ptype.indexOf('wms') < 0) {
+                  return false;
+                }
               } catch (err) {
                 // if the server id throws an error, there's no legend to be had.
                 return false;
@@ -117,9 +120,13 @@
                 format: 'image/png',
                 width: '20', height: '20',
                 transparent: 'true',
+                // if the server has a sepcified version, use it, otherwise default to 1.3.0
+                version: server.version !== undefined ? server.version : '1.3.0',
                 legend_options: 'fontColor:0xFFFFFF;fontAntiAliasing:true;fontSize:14;fontStyle:bold;',
                 layer: layer.get('metadata').name
               };
+
+              params['_dc'] = scope.legendTime;
 
               // parse the server url
               var uri = new goog.Uri(domain);
@@ -142,6 +149,11 @@
               if (legendOpen === true && angular.element('.legend-item').length == 1) {
                 closeLegend();
               }
+            });
+
+            scope.$on('layers-styled', function() {
+              // update the last-refresh legend time to freshen the legends
+              scope.legendTime = (new Date()).getTime();
             });
           }
         };

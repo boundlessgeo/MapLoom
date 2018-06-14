@@ -347,8 +347,14 @@ var SERVER_SERVICE_USE_PROXY = true;
         // is initially created.  This attribute will prevent MapLoom from running logic (ie a getCapabilties request)
         // until the user specifically tells MapLoom to make the request.  The user tells MapLoom to run the logic
         // from the 'Add Layers' dialog.
-        lazy: false
+        lazy: true
       };
+
+      if (window.location.search.indexOf('layer=') >= 0 ||
+          window.location.search.indexOf('copy=') >= 0 ||
+          window.location.pathname.indexOf('/view') >= 0) {
+        server.lazy = false;
+      }
 
       goog.object.extend(server, serverInfo, {});
 
@@ -364,33 +370,14 @@ var SERVER_SERVICE_USE_PROXY = true;
       var doWork = function() {
         service_.populateLayersConfig(server)
             .then(function(response) {
-              // set the id. it should always resolve to the length
-              if (goog.isDefAndNotNull(server.layersConfig) && server.layersConfig.length === 0 && !loaded &&
-                  server.lazy !== true) {
-                dialogService_.warn(translate_.instant('add_server'), translate_.instant('server_connect_failed'),
-                    [translate_.instant('yes_btn'), translate_.instant('no_btn')], false).then(function(button) {
-                  switch (button) {
-                    case 0:
-                      server.id = serverCount++;
-                      servers.push(server);
-                      rootScope_.$broadcast('server-added', server.id);
-                      deferredResponse.resolve(server);
-                      break;
-                    case 1:
-                      deferredResponse.reject(server);
-                      break;
-                  }
-                });
-              } else {
-                // If there are no layers on the server, layersConfig will be undefined.
-                if (!goog.isDefAndNotNull(server.layersConfig)) {
-                  server.layersConfig = [];
-                }
-                server.id = serverCount++;
-                servers.push(server);
-                rootScope_.$broadcast('server-added', server.id);
-                deferredResponse.resolve(server);
+              // add the server when the config is loaded.
+              if (!goog.isDefAndNotNull(server.layersConfig)) {
+                server.layersConfig = [];
               }
+              server.id = serverCount++;
+              servers.push(server);
+              rootScope_.$broadcast('server-added', server.id);
+              deferredResponse.resolve(server);
             }, function(reject) {
               deferredResponse.reject(reject);
             });
@@ -398,7 +385,7 @@ var SERVER_SERVICE_USE_PROXY = true;
 
       if (goog.isDefAndNotNull(server.url)) {
         if (server.url.indexOf(location_.host()) === -1) {
-          if (server.config.alwaysAnonymous) {
+          if (server.config.requireLogin !== true) {
             server.username = translate_.instant('anonymous');
             server.authentication = undefined;
             doWork();
@@ -563,6 +550,60 @@ var SERVER_SERVICE_USE_PROXY = true;
       return result.promise;
     };
 
+    /**
+     * Read the configuration for a server.
+     */
+    this.populateLayersConfigRest = function(server, force, deferredResponse) {
+      var meta_url = server.url + '?f=pjson';
+      var url = configService_.configuration.proxy + encodeURIComponent(meta_url);
+
+      // convert the ESRI spatial reference to an EPSG code.
+      var sr_to_crs = function(sr) {
+        return 'EPSG:' + sr.latestWkid;
+      };
+
+      http_.get(url, {}).then(function(xhr) {
+        if (xhr.status === 200) {
+          var conf = xhr.data;
+          server.populatingLayersConfig = false;
+          server.restConfig = conf;
+
+          // set the layers config.
+          var layers_config = [];
+          for (var i = 0, ii = xhr.data.layers.length; i < ii; i++) {
+            var layer_conf = xhr.data.layers[i];
+            var extent = xhr.data.fullExtent;
+
+            // this transformation is done to match what Exchange appears
+            //  to be doing to the layer names.
+            var name = layer_conf.name.replace(/\./g, '').replace(/ /g, '-');
+            layers_config.push(Object.assign(xhr.data.layers[i], {
+              name: server.name + '_' + name.toLowerCase() + ':' + layer_conf.id,
+              Title: layer_conf.name,
+              srs: sr_to_crs(xhr.data.spatialReference),
+              extent: {
+                crs: sr_to_crs(extent.spatialReference),
+                extent: [
+                  extent.xmin,
+                  extent.ymin,
+                  extent.xmax,
+                  extent.ymax
+                ]
+              }
+            }));
+
+          }
+          server.CRS = sr_to_crs(xhr.data.spatialReference);
+          server.layersConfig = layers_config;
+
+          rootScope_.$broadcast('layers-loaded', server.id);
+          deferredResponse.resolve(server);
+        }
+      });
+
+      return deferredResponse;
+    };
+
     this.getLayerConfig = function(serverId, layerConf) {
       var layersConfig = service_.getLayersConfig(serverId);
       var layerConfig = null;
@@ -570,10 +611,15 @@ var SERVER_SERVICE_USE_PROXY = true;
       var layerName = layerConf.Name ? layerConf.Name : layerConf.name;
 
       for (var index = 0; index < layersConfig.length; index += 1) {
-        //if (layersConfig[index].Name === layerName || (typeof layerName.split != 'undefined' &&
-        //    layersConfig[index].Name === layerName.split(':')[1])) {
-        if ((goog.isDefAndNotNull(layersConfig[index].uuid) && layersConfig[index].uuid === layerId) ||
-            (!goog.isDefAndNotNull(layersConfig[index].uuid) && layersConfig[index].Name === layerName)) {
+        var hasConfig = false;
+        var lName = layersConfig[index].name || layersConfig[index].Name || '';
+        if (layersConfig[index].name === layerName || (lName.indexOf(layerName) >= 0)) {
+          hasConfig = true;
+        }
+        if (goog.isDefAndNotNull(layersConfig[index].uuid) && layersConfig[index].uuid === layerId || !goog.isDefAndNotNull(layersConfig[index].uuid) && layersConfig[index].Name === layerName) {
+          hasConfig = true;
+        }
+        if (hasConfig) {
           layerConfig = layersConfig[index];
           if (goog.isDefAndNotNull(layerConfig.CRS)) {
             for (var code in layerConfig.CRS) {
@@ -747,6 +793,14 @@ var SERVER_SERVICE_USE_PROXY = true;
       // if the layer provides the extent, yay! easy.
       if (layer.extent) {
         extent = layer.extent;
+      // registry returns layers with a four-property
+      //  definition for the bounding box and is reliably populated
+      //  as accurate.
+      } else if (goog.isDefAndNotNull(layer.bbox_bottom)) {
+        extent = [
+          layer.bbox_left, layer.bbox_bottom,
+          layer.bbox_right, layer.bbox_top
+        ];
       // geonode publishes the extent as a wkt polygon,
       //  this parses the polygon and gets the extent out.
       } else if (layer.csw_wkt_geometry) {
@@ -967,6 +1021,35 @@ var SERVER_SERVICE_USE_PROXY = true;
       return addSearchResults(searchUrl, searchParams, server, service_.reformatLayerConfigs);
     };
 
+    /**
+     * Remote services will occasionally use a nested-set of layers.
+     * both the "parent" and "child" layers are considered valid but
+     * the internal config lookups are "flat" and do not honor that
+     * arrangement.  This code flattens the WMS groups.
+     */
+    var flattenLayersConfig = function(layersConf) {
+      // bail if layersConf is undefined.
+      if (layersConf === undefined) {
+        return [];
+
+      }
+      var layers = [];
+      for (var i = 0, ii = layersConf.length; i < ii; i++) {
+        var layer_conf = layersConf[i];
+        var layer = Object.assign({}, layer_conf);
+
+        if (layer_conf.Layer && layer_conf.Layer.length > 0) {
+          // remove the child layers.
+          delete layer.Layer;
+
+          layers = layers.concat(flattenLayersConfig(layer_conf.Layer));
+        }
+        layers.push(layer);
+      }
+
+      return layers;
+    };
+
     this.populateLayersConfigInelastic = function(server, force, deferredResponse) {
       // prevent getCapabilities request until ran by the user.
       if (server.lazy !== true || force === true || server.mapLayerRequiresServer === true) {
@@ -980,6 +1063,11 @@ var SERVER_SERVICE_USE_PROXY = true;
 
         var iqm = url.indexOf('?');
         var url_getcaps = url + (iqm >= 0 ? (iqm - 1 == url.length ? '' : '&') : '?') + 'SERVICE=WMS&REQUEST=GetCapabilities';
+
+        // if the service is remote, setup a proxy for the get caps URL
+        if (server.remote === true) {
+          url_getcaps = configService_.configuration.proxy + encodeURIComponent(url_getcaps);
+        }
 
         server.populatingLayersConfig = true;
         var config = {};
@@ -995,7 +1083,33 @@ var SERVER_SERVICE_USE_PROXY = true;
             var response = parser.read(xhr.data);
             if (goog.isDefAndNotNull(response.Capability) &&
                 goog.isDefAndNotNull(response.Capability.Layer)) {
-              server.layersConfig = response.Capability.Layer.Layer;
+
+              server.layersConfig = flattenLayersConfig(response.Capability.Layer.Layer);
+              // handle WMS version differences.
+              server.version = response.version;
+
+              // get the collection of SRS's supported by the server.
+              // WARNING! This can be bug prone as the SRS support CAN be
+              //  different on a per-layer basis
+              // CRS is used for 1.3.0 and SRS is used for < 1.1.0,
+              //  so both are compiled in to the regex.
+              var supported_srs = {};
+              var srs_regex = new RegExp('<[CS]RS>(EPSG:[0-9]+)</[CS]RS>', 'g');
+              var parsed_srs = srs_regex.exec(xhr.data);
+              while (parsed_srs !== null) {
+                // pull out the parsed SRS group.
+                supported_srs[parsed_srs[1]] = true;
+                parsed_srs = srs_regex.exec(xhr.data);
+              }
+
+
+              // handle the unique case in which the map is using 900913
+              //  but the service only recognizes 3857.
+              var map_srs = configService_.configuration.map.projection;
+              if (supported_srs[map_srs] !== true && map_srs === 'EPSG:900913' && supported_srs['EPSG:3857']) {
+                server.override_crs = 'EPSG:3857';
+              }
+
               console.log('---- populateLayersConfig.populateLayersConfig server', server);
               rootScope_.$broadcast('layers-loaded', server.id);
               deferredResponse.resolve(server);
@@ -1103,6 +1217,8 @@ var SERVER_SERVICE_USE_PROXY = true;
           ];
           deferredResponse.resolve(server);
         } else if (server.ptype === 'gxp_arcrestsource') {
+          deferredResponse = service_.populateLayersConfigRest(server, force, deferredResponse);
+          /*
           server.defaultServer = true;
           if (!goog.isDefAndNotNull(server.name)) {
             server.name = 'Esri';
@@ -1147,7 +1263,10 @@ var SERVER_SERVICE_USE_PROXY = true;
             ];
           }
 
-          deferredResponse.resolve(server);
+          this.getRestLayerConfig(server).then(function(config) {
+            deferredResponse.resolve(server);
+          });
+          */
         } else if (server.ptype === 'gxp_osmsource') {
           server.defaultServer = true;
           if (!goog.isDefAndNotNull(server.name)) {

@@ -263,17 +263,26 @@ describe('FeatureManagerService', function() {
             return {'status': 200};
           });
 
-          var props = [{0: 'evento'}, {0: 'situacion_crit'}];
+          var props = [['attr', '0']];
           featureMgrService.setSelectedItemProperties(props);
+          props = [['attr', 'X&Y']];
           featureMgrService.endFeatureInsert(true, props, [55, 55]);
           httpBackend.flush();
           httpBackend.expectPOST();
+
+          // test escapeXml under more situations.
+          expect(escapeXml(2)).toBe(2);
+          expect(escapeXml(undefined)).toBe(undefined);
+          expect(escapeXml(null)).toBe(null);
+          expect(escapeXml('X&Y')).toBe('X&amp;Y');
 
           expect(wfsURL.indexOf('wfs')).not.toBe(-1);
           expect(wfsData.indexOf('wfs')).not.toBe(-1);
           expect(wfsData.indexOf('Insert')).not.toBe(-1);
           expect(wfsData.indexOf('sixpoint')).not.toBe(-1);
           expect(wfsData.indexOf('freedom')).not.toBe(-1);
+          // check to ensure the & was escaped.
+          expect(wfsData.indexOf('X&Y')).toBe(-1);
         });
       });
 

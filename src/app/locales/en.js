@@ -381,7 +381,17 @@
     'pin_feature' : 'Pin Feature',
     'unpin_feature' : 'Unpin Feature',
     'pinned_search' : 'Pinned Search',
-    'comment_acknowledge': 'I acknowledge that my comment goes to a queue and won\'t appear on the map until approved by PPACG staff'
+    'comment_acknowledge': 'I acknowledge that my comment goes to a queue and won\'t appear on the map until approved by PPACG staff',
+    'too_many_filters' : 'You may have too many filters selected.  Try removing one of the following:',
+    'pin_feature' : 'Pin Feature',
+    'unpin_feature' : 'Unpin Feature',
+    'pinned_search' : 'Pinned Search',
+    'style_layer': 'Style Layer',
+    'style_layer_failed': 'There was an error trying to update {{ style_name }}.sld, please try again later.',
+    'show_style_editor': 'Show Style Editor',
+    'style_name': 'Style Name',
+    'save_layer_style': 'Save Layer Style',
+    'refresh_interval': 'Refresh Interval'
   };
 
   var module = angular.module('loom_translations_en', ['pascalprecht.translate']);

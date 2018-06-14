@@ -4,7 +4,7 @@
 
   module.directive('loomLayers',
       function($rootScope, mapService, serverService, historyService, featureManagerService,
-               dialogService, $translate, tableViewService) {
+               dialogService, $translate, tableViewService, configService) {
         return {
           restrict: 'C',
           replace: true,
@@ -69,6 +69,57 @@
               return false;
             };
 
+            scope.isLoadingStyle = function(layer) {
+              var loadingStyle = layer.get('metadata').loadingStyle;
+              return goog.isDefAndNotNull(loadingStyle) && loadingStyle === true;
+            };
+            scope.hasStylePermissions = function(layer) {
+              var exchangeMetadata = layer.get('exchangeMetadata');
+              var has_perms = false;
+              if (goog.isDefAndNotNull(exchangeMetadata) && goog.isDefAndNotNull(exchangeMetadata.permissions)) {
+                // check for any raster attributes.
+                var attrs = exchangeMetadata.attributes;
+                for (var i = 0, ii = attrs.length; i < ii; i++) {
+                  // exit early if a raster attribute is found.
+                  if (attrs[i].attribute_type === 'raster') {
+                    return false;
+                  }
+                }
+
+                var permissions = exchangeMetadata.permissions;
+                if (goog.isDefAndNotNull(permissions)) {
+                  has_perms = permissions.edit_style;
+                }
+              }
+              return has_perms;
+            };
+
+            scope.toggleStyleControl = function(layer) {
+              var showStylePanel = layer.get('metadata').showStylePanel;
+              if (!goog.isDefAndNotNull(showStylePanel)) {
+                layer.get('metadata').showStylePanel = true;
+              } else {
+                layer.get('metadata').showStylePanel = !showStylePanel;
+              }
+            };
+
+            scope.saveLayerStyle = function(layer) {
+              if (goog.isDefAndNotNull(layer.get('metadata').defaultStyle)) {
+                var loading = layer.get('metadata').loadingStyle || true;
+                if (goog.isDefAndNotNull(loading) && loading) {
+                  layer.get('metadata').loadingStyle = true;
+                  mapService.updateStyle(layer).then(function() {
+                    layer.get('metadata').loadingStyle = false;
+                  }, function() {
+                    layer.get('metadata').loadingStyle = false;
+                    dialogService.error($translate.instant('save_layer_style'),
+                        $translate.instant('style_layer_failed',
+                            { 'style_name': layer.get('metadata').defaultStyle.name}));
+                  });
+                }
+              }
+            };
+
             scope.isLoadingTable = function(layer) {
               var loadingTable = layer.get('metadata').loadingTable;
               return goog.isDefAndNotNull(loadingTable) && loadingTable === true;
@@ -81,7 +132,8 @@
                 $('#table-view-window').modal('show');
               }, function() {
                 layer.get('metadata').loadingTable = false;
-                dialogService.error($translate.instant('show_table'), $translate.instant('show_table_failed'));
+                dialogService.error($translate.instant('show_table'),
+                    $translate.instant('show_table_failed'));
               });
             };
 
@@ -133,6 +185,24 @@
 
             scope.getLayerAttributeVisibility = function(layer) {
               $rootScope.$broadcast('getLayerAttributeVisibility', layer);
+            };
+
+            scope.canZoom = function(layer) {
+              // ensure the projection is "zoomable".
+              var metadata = layer.get('metadata');
+              if (metadata.bbox) {
+                var layer_crs = metadata.bbox.crs ? metadata.bbox.crs : metadata.bbox.extent.crs;
+                return (ol.proj.get(layer_crs) !== undefined);
+              }
+              return false;
+            };
+
+            scope.updateStyleChoices = function(styleChoices) {
+              var overrides = {
+                fontFamily: ['serif', 'sans-serif']
+              };
+
+              return Object.assign({}, styleChoices, overrides);
             };
           }
         };
