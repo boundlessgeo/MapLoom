@@ -405,8 +405,8 @@
                 var metadata = tableViewService.selectedLayer.get('metadata');
                 var typeName = metadata.name;
 
-                if (!typeName.startsWith(metadata.workspace + ':')) {
-                  typeName = metadata.workspace + ':' + metadata.name;
+                if (!typeName.startsWith('geonode:')) {
+                  typeName = 'geonode:' + metadata.name;
                 }
 
                 xml += '' +

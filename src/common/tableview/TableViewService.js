@@ -274,8 +274,8 @@
       }
 
       var typeName = metadata.name;
-      if (!typeName.startsWith(metadata.workspace + ':')) {
-        typeName = metadata.workspace + ':' + metadata.name;
+      if (!typeName.startsWith('geonode:')) {
+        typeName = 'geonode:' + metadata.name;
       }
 
       var xml = '';
@@ -370,7 +370,7 @@
         var getRestrictions = function() {
           if (metadata.readOnly || !metadata.editable) {
             service_.readOnly = true;
-            return;
+            //return;
           }
           service_.readOnly = false;
 
