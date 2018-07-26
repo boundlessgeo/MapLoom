@@ -83,6 +83,9 @@
         return '//nominatim.openstreetmap.org';
       }
     };
+    var getBaseMapProxy = function(){
+      return "{{ PROXY_BASEMAP }}".toLowerCase() === "true";
+    };
 
     config =  {
         authStatus: {% if user.is_authenticated %} 200{% else %} 401{% endif %},
@@ -90,7 +93,7 @@
         currentLanguage: "{{language|default:'en'}}",
         userprofilename: {% if user.is_authenticated %} "{{ user.get_full_name }}" {% else %} undefined {% endif %},
         userprofileemail: {% if user.is_authenticated %} "{{ user.email }}" {% else %} undefined {% endif %},
-        proxy: "/proxy/?url=",
+        proxy: "{{ PROXY_URL }}" !== '' ? "{{ PROXY_URL }}" : "/proxy/?url=",
         searchUrl: getSearchUrl(),
         printService: trimUrl("{{GEOSERVER_BASE_URL}}pdf")+'/',
         /* The URL to a REST map configuration service.  This service
@@ -122,7 +125,8 @@
         nominatimSearchEnabled: nominatimSearchEnabled(),
         unifiedLayerDialog: unifiedDialogEnabled(),
         previewLayerConf: {{ MAP_PREVIEW_LAYER|safe }},
-        geoquerySearchEnabled: geoquerySearchEnabled()
+        geoquerySearchEnabled: geoquerySearchEnabled(),
+        proxyBaseMap: getBaseMapProxy()
     };
     goog.object.extend( config, {{ config|safe }});
     // clean up any of the sources URLs

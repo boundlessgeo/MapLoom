@@ -4,7 +4,7 @@
   var legendOpen = false;
 
   module.directive('loomLegend',
-      function($rootScope, mapService, serverService) {
+      function($rootScope, mapService, serverService, configService) {
         return {
           restrict: 'C',
           replace: true,
@@ -114,7 +114,7 @@
               } else {
                 domain = server.url;
               }
-
+              domain = useProxyUrlParam(getUseProxyParam(server), domain, configService);
               var params = {
                 request: 'GetLegendGraphic',
                 format: 'image/png',

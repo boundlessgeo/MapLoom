@@ -315,3 +315,20 @@ var escapeXml = function(str) {
   }
   return str;
 };
+
+// Proxy the domain if appropriate
+var getUseProxyParam = function(server) {
+  return goog.isDefAndNotNull(server.use_proxy) ? server.use_proxy : false;
+};
+// proxy a url if the source parameters indicate to do so
+var useProxyUrlParam = function(use_proxy, url, configService) {
+  if (goog.isDefAndNotNull(use_proxy) && goog.isDefAndNotNull(configService) && use_proxy === true) {
+    url = decodeURIComponent(url);
+    if (url.indexOf(configService.configuration.proxy) < 0) {
+      url = configService.configuration.proxy + encodeURIComponent(url);
+    } else {
+      url = encodeURIComponent(url);
+    }
+  }
+  return url;
+};

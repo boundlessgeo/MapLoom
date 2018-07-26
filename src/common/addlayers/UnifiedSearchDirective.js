@@ -435,47 +435,7 @@
               scope.searchState = 'finished';
 
               if (response.data && response.data.objects) {
-
-                var layers = response.data.objects;
-                var results = [];
-
-                for (var i = 0, ii = layers.length; i < ii; i++) {
-                  var layer = layers[i];
-                  // filter out maps, documents, etc.
-                  if (layer.type === 'layer') {
-                    results.push(layer);
-                  }
-                }
-                scope.searchResults = results;
-
-                /*
-                // reset the current layers list for both servers.
-                servers.geoserver.layersConfig = [];
-                servers.registry.layersConfig = [];
-
-                // sort the layers into the appropriate 'bins',
-                //  registry layers are really from the registry index,
-                //  exchange layers are really from the local geoserver/geonode
-                //    instance.
-                var layers = response.data.objects;
-                for (var i = 0, ii = layers.length; i < ii; i++) {
-                  var layer = layers[i];
-                  var index_name = 'layer-index';
-                  if (goog.isDefAndNotNull(layer.registry_url)) {
-                    index_name = 'registry';
-                  }
-                  // ensure that maps and documents are excluded from the search results.
-                  if (index_name == 'registry' || layer.type == 'layer') {
-                    layers_by_index[index_name].push(layer);
-                  }
-                }
-
-                // convert the results from the search using the appropriate
-                //  utilty functions.
-                servers.geoserver.layersConfig = serverService.createGeonodeSearchLayerObjects(layers_by_index['layer-index'], servers.geoserver.id);
-                servers.registry.layersConfig = serverService.createHyperSearchLayerObjects(layers_by_index['registry'], servers.registry.id);
-                */
-
+                scope.searchResults = response.data.objects;
               }
             };
 
@@ -528,7 +488,9 @@
               // minimally, the number of layers should be limited to 100
               //   leaving out limit will result in 0 layers returned from the service.
               var params = {
-                limit: 100
+                limit: 100,
+                type: 'layer',
+                get_proxy: true
               };
 
               // add the search parameters to the params object.
@@ -704,11 +666,13 @@
               return $http.get(layer.detail_url + '/get').then(function(response) {
                 var layer_def = response.data;
                 var servers = serverService.getServers();
+                var server_to_use = null;
 
                 var server_exists = false;
                 for (var i = 0, ii = servers.length; i < ii; i++) {
                   if (servers[i].url === layer_def.url) {
                     server_exists = true;
+                    server_to_use = servers[i];
                   }
                 }
 
@@ -722,7 +686,8 @@
                     ptype: layer_def.ptype,
                     isVirtualService: false,
                     remote: true,
-                    name: server_name
+                    name: server_name,
+                    use_proxy: layer.use_proxy
                   }).then(function(server) {
                     layer.add = true;
                     // pick the "best of", different version of the code will
@@ -734,6 +699,18 @@
                     }
                     LayersService.addLayer(layer, server.id, server);
                   });
+                } else {
+                  layer.add = true;
+
+                  // pick the "best of", different version of the code will
+                  //  or will not prefix the data source in the typename vs in the name.
+                  if (layer_def.name.split(':').length < layer_def.typename.split(':').length) {
+                    layer.name = layer_def.name;
+                  } else {
+                    layer.name = layer_def.typename;
+                  }
+
+                  LayersService.addLayer(layer, server_to_use.id, server_to_use);
                 }
               });
             };

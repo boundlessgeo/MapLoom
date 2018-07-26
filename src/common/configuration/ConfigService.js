@@ -127,6 +127,19 @@
         goog.object.extend(this.configuration, $window.config, {});
       }
 
+      // proxy basemap if config value proxyBaseMap is true
+      // this is specific to the OSM basemap because it is constructed here
+      // and may not be overriden by a passed in MapLayer from GeoNode
+      for (var source in this.configuration.sources) {
+        // the constructed default baselayer is just an OSM source
+        // with only one kvp - ptype: gxp_osmsource
+        if (Object.keys(this.configuration.sources[source]).length === 1) {
+          if (this.configuration.sources[source]['ptype'] == 'gxp_osmsource') {
+            this.configuration.sources[source]['use_proxy'] = this.configuration.proxyBaseMap;
+          }
+        }
+      }
+
       this.username = this.configuration.username;
       this.currentLanguage = this.configuration.currentLanguage;
       this.user_profile_name = this.configuration.userprofilename;
