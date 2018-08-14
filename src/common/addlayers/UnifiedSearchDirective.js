@@ -435,7 +435,8 @@
               scope.searchState = 'finished';
 
               if (response.data && response.data.objects) {
-
+                scope.searchResults = response.data.objects;
+                /*
                 var layers = response.data.objects;
                 var results = [];
 
@@ -447,7 +448,7 @@
                   }
                 }
                 scope.searchResults = results;
-
+                */
                 /*
                 // reset the current layers list for both servers.
                 servers.geoserver.layersConfig = [];
@@ -528,7 +529,9 @@
               // minimally, the number of layers should be limited to 100
               //   leaving out limit will result in 0 layers returned from the service.
               var params = {
-                limit: 100
+                limit: 100,
+                type: 'layer',
+                get_proxy: true
               };
 
               // add the search parameters to the params object.
@@ -722,7 +725,8 @@
                     ptype: layer_def.ptype,
                     isVirtualService: false,
                     remote: true,
-                    name: server_name
+                    name: server_name,
+                    use_proxy: layer.use_proxy
                   }).then(function(server) {
                     layer.add = true;
                     // pick the "best of", different version of the code will
@@ -736,7 +740,13 @@
                   });
                 } else {
                   layer.add = true;
-                  layer.name = layer.typename;
+                  // pick the "best of", different version of the code will
+                  //  or will not prefix the data source in the typename vs in the name.
+                  if (layer_def.name.split(':').length < layer_def.typename.split(':').length) {
+                    layer.name = layer_def.name;
+                  } else {
+                    layer.name = layer_def.typename;
+                  }
                   LayersService.addLayer(layer, server_to_use.id, server_to_use);
                 }
               });

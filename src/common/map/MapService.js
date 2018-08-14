@@ -667,6 +667,43 @@
     };
 
     this.createLayerFull = function(minimalConfig, fullConfig, server, opt_layerOrder) {
+      // proxy a url if the souce parameters indicate to do so
+      var useProxyUrlParam = function(use_proxy, url) {
+        if (goog.isDefAndNotNull(use_proxy) && use_proxy === true) {
+          url = decodeURIComponent(url);
+          if (url.indexOf(configService_.configuration.proxy) < 0) {
+            url = configService_.configuration.proxy + encodeURIComponent(url);
+          } else {
+            url = encodeURIComponent(url);
+          }
+        }
+        return url;
+      };
+      // fixes the projection and utilizes the proxy url if appropriate for the service
+      var fixRequestUrl = function(service, use_proxy) {
+        // WARNING! this is a monkey-patch for the ancient verison
+        //  of openlayers which MapLoom required as of 18 Jan 2018
+
+        // Store the original function
+        service._getRequestUrl_ = service.getRequestUrl_;
+
+        service.getRequestUrl_ = function(tileCoord, tileSize, tileExtent, pixelRatio, projection, params) {
+          // patch the web mercator projection.
+          var proj = this._projection !== undefined ? this._projection : projection;
+
+          if (proj.getCode() === 'EPSG:900913') {
+            proj = ol.proj.get('EPSG:3857');
+          }
+
+          var url = this._getRequestUrl_(tileCoord, tileSize, tileExtent, pixelRatio, proj, params);
+          return useProxyUrlParam(use_proxy, url);
+        };
+
+        return service;
+      };
+      var getUseProxyParam = function(server) {
+        return goog.isDefAndNotNull(server.use_proxy) ? server.use_proxy : false;
+      };
       // download missing projection projection if we don't have it
       if (goog.isDefAndNotNull(fullConfig)) {
         var projcode = service_.getCRSCode(fullConfig.CRS);
@@ -748,7 +785,7 @@
       } else {
         if (fullConfig.type && fullConfig.type == 'mapproxy_tms') {
           var src = new ol.source.XYZ({
-            url: fullConfig.detail_url
+            url: useProxyUrlParam(getUseProxyParam(server), fullConfig.detail_url)
           });
 
           // do not try to offer a GetFeatureInfo call if there
@@ -813,7 +850,7 @@
           layer = new ol.layer.Tile({
             metadata: {
               name: minimalConfig.name,
-              url: goog.isDefAndNotNull(mapproxyMostSpecificUrl) ? mapproxyMostSpecificUrl : undefined,
+              url: goog.isDefAndNotNull(mapproxyMostSpecificUrl) ? useProxyUrlParam(getUseProxyParam(server), mapproxyMostSpecificUrl) : undefined,
               title: fullConfig.title,
               extent: fullConfig['extent'],
               abstract: fullConfig.abstract,
@@ -840,6 +877,65 @@
             url: settings.OsmLocalUrl
           };
           var osmSource = (settings.OsmLocalUrl !== 'default') ? osmLocal : '';
+          var osmService = new ol.source.OSM(osmSource);
+          // The source will only have the one url in the first index
+          var osmUrl = useProxyUrlParam(getUseProxyParam(server), osmService.getUrls()[0]);
+          // OSM source doesn't want the url encoded
+          // OSM requires special encoding due to variable url
+          var encodeOSMUrl = function(osmUrl) {
+            // OSM source doesn't want the url encoded, make sure it is decoded
+            osmUrl = decodeURIComponent(osmUrl);
+            // Error check: don't encode osmUrl if it's not proxied
+            if (osmUrl.indexOf(configService_.configuration.proxy) < 0) {
+              return osmUrl;
+            }
+            // Must remove proxy from the url and add it back unencoded at the end
+            osmUrl = osmUrl.replace(configService_.configuration.proxy, '');
+
+            // Separate out parts that cannot be encoded, and only encode what is necessary
+            // osmUrl is regex with the following pattern:
+            // https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}
+            // parse out all {}, and only encoed non-bracket pieces
+            var openBracketIndex, closedBracketIndex, encodedOSMUrl = '';
+            while (osmUrl.indexOf('{') > -1) {
+              openBracketIndex = osmUrl.indexOf('{');
+              closedBracketIndex = osmUrl.indexOf('}');
+              // if the closed bracket comes before the open bracket, something has gone wrong
+              if (closedBracketIndex > openBracketIndex) {
+                // encode up to the open bracket
+                encodedOSMUrl += encodeURIComponent(osmUrl.substring(0, openBracketIndex));
+                // don't encode what's in the brackets
+                encodedOSMUrl += osmUrl.substring(openBracketIndex, closedBracketIndex + 1);
+                osmUrl = osmUrl.substring(closedBracketIndex + 1);
+              } else {
+                // TODO: what do we do if this happens?
+                // for now just skipping to next
+                osmUrl = osmUrl.substring(closedBracketIndex + 1);
+                // alert the user something went wrong
+                console.log('WARNING: A closing bracket } preceded an opening bracket { in url: ' + osmUrl);
+                // prevent infinite loop potential with dangling open bracket
+                if (osmUrl.indexOf('}') == -1 && osmUrl.indexOf('{') > -1) {
+                  osmUrl = osmUrl.substring(openBracketIndex + 1);
+                }
+              }
+            }
+            // TODO: What to do if there's dangling closed bracket?
+            if (osmUrl.indexOf('}') > -1) {
+              // alert the user something went wrong
+              console.log('WARNING: A dangling closed bracket } was in url: ' + osmUrl);
+            }
+            // encode anything remaining
+            encodedOSMUrl += encodeURIComponent(osmUrl);
+            return configService_.configuration.proxy + encodedOSMUrl;
+          };
+          // Only encode the OSM url if it's being proxied
+          var encodedOsmUrl;
+          if (osmUrl.indexOf(configService_.configuration.proxy) > -1) {
+            encodedOsmUrl = encodeOSMUrl(osmUrl);
+          } else {
+            encodedOsmUrl = osmUrl;
+          }
+          osmService.setUrl(encodedOsmUrl);
           layer = new ol.layer.Tile({
             metadata: {
               serverId: server.id,
@@ -847,7 +943,7 @@
               title: fullConfig.Title
             },
             visible: minimalConfig.visibility,
-            source: new ol.source.OSM(osmSource)
+            source: osmService
           });
         } else if (server.ptype === 'gxp_bingsource') {
 
@@ -867,6 +963,7 @@
               title: fullConfig.Title
             },
             visible: minimalConfig.visibility,
+            // TODO: Do we want to override the url in fullConfig.sourceParams?
             source: new ol.source.BingMaps(sourceParams)
           });
         } else if (server.ptype === 'gxp_googlesource') {
@@ -876,7 +973,7 @@
 
           var parms = {
             //url: 'http://api.tiles.mapbox.com/v3/mapbox.' + fullConfig.sourceParams.layer + '.json?access_token=pk.eyJ1IjoiYmVja2VyciIsImEiOiJjaWtzcHVyeTYwMDA3dWdsenB5aHUxMzl1In0.1FVjOTdhoXGXtnfApX8wVQ',
-            url: '//api.tiles.mapbox.com/v4/mapbox.' + fullConfig.sourceParams.layer + '.json?access_token=pk.eyJ1IjoiYmVja2VyciIsImEiOiJjaWtzcHVyeTYwMDA3dWdsenB5aHUxMzl1In0.1FVjOTdhoXGXtnfApX8wVQ',
+            url: useProxyUrlParam(getUseProxyParam(server), '//api.tiles.mapbox.com/v4/mapbox.' + fullConfig.sourceParams.layer + '.json?access_token=pk.eyJ1IjoiYmVja2VyciIsImEiOiJjaWtzcHVyeTYwMDA3dWdsenB5aHUxMzl1In0.1FVjOTdhoXGXtnfApX8wVQ'),
             crossOrigin: true
           };
           var mbsource = new ol.source.TileJSON(parms);
@@ -903,7 +1000,10 @@
           // This arc service does not support tiled maps, so this will
           // use the arc image service instead...
           var tilemapServiceSource = new ol.source.TileArcGISRest({
-            url: rest_url
+            url: rest_url,
+            params: {
+              'LAYERS': 'show:' + fullConfig.id
+            }
           });
 
           // patch the web mercator projection.
@@ -928,6 +1028,8 @@
           } else {
             bbox = fullConfig.extent;
           }
+
+          tilemapServiceSource = fixRequestUrl(tilemapServiceSource, server.use_proxy);
 
           layer = new ol.layer.Tile({
             metadata: {
@@ -960,8 +1062,9 @@
             bbox: bbox,
             title: fullConfig.Title
           };
+          // TODO: Should this portion be proxied?
           var attribution = new ol.Attribution({
-            html: 'Tiles &copy; <a href="' + server.url + '">ArcGIS</a>'
+            html: 'Tiles &copy; <a href="' + useProxyUrlParam(getUseProxyParam(server), server.url) + '">ArcGIS</a>'
           });
 
           // ensure the trailing slash is set.
@@ -969,7 +1072,7 @@
           if (url.substring(url.length - 1) !== '/') {
             url += '/';
           }
-          var serviceUrl = url + 'tile/{z}/{y}/{x}';
+          var serviceUrl = useProxyUrlParam(getUseProxyParam(server), url) + 'tile/{z}/{y}/{x}';
           var arcrestServiceSource = null;
           if (server.proj === 'EPSG:4326') {
             var projection = ol.proj.get('EPSG:4326');
@@ -1006,6 +1109,7 @@
           var jsontile_source = server.layersConfig[0].TileJSONSource;
 
           if (goog.isDefAndNotNull(jsontile_source)) {
+            // TODO: Do we want to override the url in fullConfig.sourceParams?
             layer = new ol.layer.Tile({
               metadata: {
                 serverId: server.id,
@@ -1021,6 +1125,7 @@
             console.log('====[ Error: could not create base layer.');
           }
         } else if (server.ptype === 'gxp_mapquestsource') {
+          // TODO: Do we want to override the url in fullConfig.sourceParams?
           var source = new ol.source.MapQuest(fullConfig.sourceParams);
 
           if (goog.isDefAndNotNull(source)) {
@@ -1055,6 +1160,8 @@
             }
           }
 
+          var proj;
+
           if (goog.isArray(fullConfig.BoundingBox)) {
             bbox = fullConfig.BoundingBox[0];
           } else if (goog.isArray(fullConfig.extent)) {
@@ -1067,6 +1174,17 @@
               extent: minimalConfig.bbox,
               crs: 'EPSG:900913'
             };
+          } else if (fullConfig.bbox_left) {
+            bbox = {
+              crs: server.CRS || fullConfig.srid,
+              extent: [
+                fullConfig.bbox_left,
+                fullConfig.bbox_bottom,
+                fullConfig.bbox_right,
+                fullConfig.bbox_top
+              ]
+            };
+            proj = server.CRS || fullConfig.srid;
           }
 
           var source_params = {
@@ -1076,6 +1194,9 @@
 
           if (server.version !== undefined) {
             source_params['VERSION'] = server.version;
+          } else {
+            source_params['VERSION'] = '1.1.1';
+            source_params['SRS'] = proj;
           }
 
           var tilewms_source = new ol.source.TileWMS({
@@ -1092,45 +1213,28 @@
           }
 
           if (server.remote === true) {
-            tilewms_source._isRemote = true;
+            tilewms_source = fixRequestUrl(tilewms_source, true);
+          } else {
+            tilewms_source = fixRequestUrl(tilewms_source, server.use_proxy);
           }
-
-          // WARNING! this is a monkey-patch for the ancient verison
-          //  of openlayers which MapLoom required as of 18 Jan 2018
-
-          // Store the original function
-          tilewms_source._getRequestUrl_ = tilewms_source.getRequestUrl_;
-
-          tilewms_source.getRequestUrl_ = function(tileCoord, tileSize, tileExtent, pixelRatio, projection, params) {
-            // manually override the projection
-            var proj = this._projection !== undefined ? this._projection : projection;
-
-            var url = this._getRequestUrl_(tileCoord, tileSize, tileExtent, pixelRatio, proj, params);
-
-            if (this._isRemote === true) {
-              url = configService_.configuration.proxy + encodeURIComponent(url);
-            }
-
-            return url;
-          };
 
           layer = new ol.layer.Tile({
             metadata: {
               serverId: server.id,
               name: minimalConfig.name,
-              url: goog.isDefAndNotNull(wmscsourceMostSpecificUrl) ? wmscsourceMostSpecificUrl : undefined,
-              title: fullConfig.Title,
-              abstract: fullConfig.Abstract,
+              url: goog.isDefAndNotNull(wmscsourceMostSpecificUrl) ? useProxyUrlParam(getUseProxyParam(server), wmscsourceMostSpecificUrl) : undefined,
+              title: fullConfig.Title || fullConfig.title,
+              abstract: fullConfig.Abstract || fullConfig.abstract,
               keywords: fullConfig.KeywordList,
               workspace: nameSplit.length > 1 ? nameSplit[0] : '',
               readOnly: false,
               editable: false,
               bbox: bbox,
-              projection: service_.getCRSCode(fullConfig.CRS),
+              projection: service_.getCRSCode(fullConfig.CRS) || server.CRS || fullConfig.srid,
               savedSchema: minimalConfig.schema,
               dimensions: fullConfig.Dimension
             },
-            projection: server.override_crs,
+            projection: server.override_crs || service_.getCRSCode(fullConfig.CRS) || server.CRS || fullConfig.srid,
             visible: minimalConfig.visibility,
             source: tilewms_source
           });
@@ -1231,7 +1335,7 @@
             metadata: {
               serverId: server.id,
               name: minimalConfig.name,
-              url: goog.isDefAndNotNull(url) ? url : undefined,
+              url: goog.isDefAndNotNull(url) ? useProxyUrlParam(getUseProxyParam(server), url) : undefined,
               title: fullConfig.Title,
               abstract: fullConfig.Abstract,
               keywords: fullConfig.KeywordList,
