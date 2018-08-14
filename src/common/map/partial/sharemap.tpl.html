@@ -1,0 +1,17 @@
+<div class="modal-body">
+    <form class="form-horizontal col-md-12">
+        <div class="form-group">
+            <label for="mapLink">{{ 'link' | translate }}</label>
+
+            <div class="input-group">
+                <input id="mapLink" readonly type="text" class="form-control" value="{{mapService.getCurrentURL()}}">
+                <span class="input-group-btn">
+                    <button id="copyMapLink" class="btn btn-default" type="button"
+                      ngclipboard data-clipboard-target="#mapLink" title="{{ 'copy_to_clipboard' | translate }}">
+                        <i class="glyphicon glyphicon-link"></i>
+                    </button>
+                </span>
+            </div>
+        </div>
+    </form>
+</div>

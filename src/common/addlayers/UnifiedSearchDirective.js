@@ -709,15 +709,13 @@
                 var servers = serverService.getServers();
                 var server_to_use = null;
 
-                var server_exists = false;
                 for (var i = 0, ii = servers.length; i < ii; i++) {
                   if (servers[i].url === layer_def.url) {
-                    server_exists = true;
                     server_to_use = servers[i];
                   }
                 }
 
-                if (!server_exists) {
+                if (server_to_use === null) {
                   // this may not be the most stable method for getting
                   //  the server name.
                   var server_name = layer.detail_url.split('/layers/')[1].split(':')[0];
@@ -742,7 +740,6 @@
                   });
                 } else {
                   layer.add = true;
-
                   // pick the "best of", different version of the code will
                   //  or will not prefix the data source in the typename vs in the name.
                   if (layer_def.name.split(':').length < layer_def.typename.split(':').length) {
@@ -750,7 +747,6 @@
                   } else {
                     layer.name = layer_def.typename;
                   }
-
                   LayersService.addLayer(layer, server_to_use.id, server_to_use);
                 }
               });

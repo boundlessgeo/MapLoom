@@ -11,7 +11,8 @@
     'loom_translations_en',
     'loom_translations_es',
     'xeditable',
-    'ngFileSaver'
+    'ngFileSaver',
+    'ngclipboard'
   ]);
 
   module.run(function run(editableOptions) {
@@ -93,6 +94,8 @@
   });
 
   module.config(function($translateProvider) {
-    $translateProvider.preferredLanguage('en');
+    $translateProvider
+      .fallbackLanguage('en')
+      .preferredLanguage('en');
   });
 }());
