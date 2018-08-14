@@ -56,6 +56,10 @@ var SERVER_SERVICE_USE_PROXY = true;
         });
       }
 
+      // allows for a server id to return for an XYZ layer
+      if (id === 'xyz') {
+        server = {name: 'XYZ Source'};
+      }
       for (var index = 0; index < servers.length; index += 1) {
         if (servers[index].id === id) {
           server = servers[index];

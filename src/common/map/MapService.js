@@ -201,6 +201,7 @@
       //this.configuration = configService_.configuration;
       this.title = configService_.configuration.about.title;
       this.abstract = configService_.configuration.about.abstract;
+      this.refresh_interval = configService_.configuration.about.refresh_interval || 60000;
       this.id = configService_.configuration.id;
       this.save_method = 'POST';
 
@@ -744,6 +745,27 @@
       var nameSplit = null;
       var url = null;
       var bbox;
+      // allow for a XYZ to be directly added to the map
+      if (minimalConfig.type === 'OpenLayers.Layer.XYZ' && minimalConfig.args[1].toString().indexOf('http') == 0) {
+        url = minimalConfig.args[1].toString();
+        layer = new ol.layer.Tile({
+          metadata: {
+            serverId: 'xyz',
+            name: minimalConfig.name,
+            title: minimalConfig.name
+          },
+          visible: minimalConfig.visibility,
+          source: new ol.source.XYZ({
+            url: url,
+            attributions: [
+              new ol.Attribution({
+                html: minimalConfig.args[2].attribution
+              })
+            ]
+          })
+        });
+        return layer;
+      }
       if (!goog.isDefAndNotNull(fullConfig)) {
         //dialogService_.error(translate_.instant('map_layers'), translate_.instant('load_layer_failed',
         //    {'layer': minimalConfig.name}), [translate_.instant('btn_ok')], false);
@@ -1383,6 +1405,10 @@
           meta.layerOrder++;
         }
 
+        if (!_.isNil(meta.config.opacity)) {
+          layer.setOpacity(meta.config.opacity);
+        }
+
         var insertIndex = -1;
 
         for (var index = 0; index < mapLayers.length; index++) {
@@ -1475,7 +1501,27 @@
 
     // Update the map after save.
     this.updateMap = function(data) {
+      // Update the map id.
       service_.id = data.id;
+
+      // Update the browser's location if we can.
+      var _window = getRealWindow();
+      if (_window.history && _window.history.pushState && service_.id > 0) {
+        var location = _window.location;
+        // Make a relative link to the new map.
+        var url = '/maps/' + service_.id + '/view';
+        // Add the query search if it exists
+        if (!_.isNil(location.search) && !_.isEmpty(location.search)) {
+          url += location.search;
+        }
+        // Add the hash if it exists
+        if (!_.isNil(location.hash) && !_.isEmpty(location.hash)) {
+          url += location.hash;
+        }
+        // Push the new URL to the browser history. This will change the browser's location and back/forward buttons'
+        // history without reloading the page.
+        _window.history.pushState(null, null, url);
+      }
     };
 
     this.save = function(copy) {
@@ -1488,7 +1534,8 @@
       var cfg = {
         about: {
           abstract: service_.abstract,
-          title: service_.title
+          title: service_.title,
+          refresh_interval: parseInt(service_.refresh_interval, 10)
         },
         map: {
           id: service_.id || 0,
@@ -1553,6 +1600,8 @@
         }
       }).success(function(data, status, headers, config) {
         service_.updateMap(data);
+        // Show the share map modal.
+        angular.element('#shareMap').modal('show');
       }).error(function(data, status, headers, config) {
         if (status == 403 || status == 401) {
           dialogService_.error(translate_.instant('save_failed'), translate_.instant('map_save_permission'));
@@ -1891,6 +1940,10 @@
         return window.parent;
       }
       return window;
+    };
+
+    this.getCurrentURL = function() {
+      return getRealWindow().location.href;
     };
 
     /** Return a hash string for storing map information.

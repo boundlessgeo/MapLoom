@@ -81,6 +81,12 @@
             </a>
           </div>
         </div>
+        <div class="container opacity-slider" ng-if="layer.get('metadata').config.group !== 'background'">
+          <input type="range" min="0" max="1" step=".01"
+            ng-init="initializeOpacity(layer)"
+            ng-model="layer.get('metadata').config.opacity"
+            ng-change="layer.setOpacity(layer.get('metadata').config.opacity)" />
+        </div>
           <div class="container" ng-show="hasStylePermissions(layer) && layer.get('metadata').showStylePanel">
           <label id="style-label" class="ellipsis" for="styleRow">
               {{ layer.get('metadata').defaultStyle.name }}.sld

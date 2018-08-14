@@ -9,6 +9,10 @@
           templateUrl: 'map/partial/savemap.tpl.html',
           link: function(scope, element, attrs) {
             scope.mapService = mapService;
+            scope.availableIntervals = [
+              {'value': 30000, 'description': '30 Seconds'},
+              {'value': 60000, 'description': '1 Minute'},
+              {'value': 180000, 'description': '3 Minutes'}];
             scope.configService = configService;
             scope.translate = $translate;
 
