@@ -61,6 +61,12 @@
 
         if (layerConfig.CRS && layerConfig.extent) {
           mapService_.zoomToExtentForProjection(layerConfig.extent, ol.proj.get(layerConfig.CRS[0]));
+        }else if (goog.isDefAndNotNull(layerConfig.srid) && goog.isDefAndNotNull(layerConfig.bbox_bottom)) {
+          extent = [
+            layerConfig.bbox_left, layerConfig.bbox_bottom,
+            layerConfig.bbox_right, layerConfig.bbox_top
+          ];
+          mapService_.zoomToExtentForProjection(extent, ol.proj.get(layerConfig.srid));
         }
       }
     };
