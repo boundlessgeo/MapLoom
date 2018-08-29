@@ -100,15 +100,16 @@
 }
 
 #switch-coords {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
   height: 22px;
   width: 22px;
   color: @zoomToExtentImageColor;
   background: @zoomToExtentColor;
   border-radius: 4px;
-  .glyphicon {
-    padding-left: 4px;
-    padding-top: 2px;
-  }
+  padding: 0px;
   &:hover {
     background-color: @mainHeaderColor;
   }

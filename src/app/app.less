@@ -356,3 +356,19 @@ textarea {
     border-top: none;
   }
 }
+
+.switch-coords.selectable {
+  li > a {
+    padding-left: 27px;
+  }
+
+  li.selected > a {
+    padding-left: 5px;
+
+    &::before {
+      padding-right: 5px;
+      font-family: 'Glyphicons Halflings';
+      content: "\e013";
+    }
+  }
+}
