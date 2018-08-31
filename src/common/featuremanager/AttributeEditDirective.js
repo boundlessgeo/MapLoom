@@ -16,9 +16,16 @@
               scope.isRemoving = false;
               var tempProperties = {};
               var attributeTypes = featureManagerService.getSelectedLayer().get('metadata').schema;
+              var exchangeMetadata = featureManagerService.getSelectedLayer().get('exchangeMetadata');
+
               if (goog.isDefAndNotNull(attributeTypes)) {
                 goog.array.forEach(properties, function(property, index, arr) {
                   var prop;
+                  if (!scope.isAttributeVisible(property[0])) {
+                    return;
+                  }
+                  var exchangeAttributes = _.find(exchangeMetadata.attributes, {attribute: property[0]});
+
                   if (goog.isDefAndNotNull(attributeTypes[property[0]]) &&
                       attributeTypes[property[0]]._type.search('gml:') === -1) {
                     prop = goog.object.clone(property);
@@ -33,6 +40,13 @@
                       ];
                     }
                     prop.nillable = attributeTypes[prop[0]]._nillable;
+
+                    if (exchangeAttributes) {
+                      prop.label = exchangeAttributes.attribute_label;
+                      prop.required = exchangeAttributes.required;
+                      prop.readOnly = exchangeAttributes.readonly;
+                    }
+
                     scope.validateField(prop, 1);
                     tempProperties[property[0]] = prop;
                   }

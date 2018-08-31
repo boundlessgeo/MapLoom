@@ -318,11 +318,18 @@
       <i class="glyphicon glyphicon-globe"></i>
     </div>
   </div>
-  <div id="switch-coords-border" class="map-btn-border" tooltip-append-to-body="true"
+  <div id="switch-coords-border" class="map-btn-border btn-group dropup" tooltip-append-to-body="true"
        tooltip-placement="right" tooltip="{{'switch_coords' | translate}}">
-    <div id="switch-coords" ng-click="mapService.switchMousePosCoordFormat()">
+    <button id="switch-coords" class="btn btn-default"  data-toggle="dropdown">
       <i class="glyphicon glyphicon-map-marker"></i>
-    </div>
+    </button>
+    <ul class="switch-coords dropdown-menu selectable">
+      <li ng-repeat="coordinateDisplay in coordinateDisplays" ng-class="{ selected: settings.coordinateDisplay === coordinateDisplay }">
+        <a ng-click="mapService.switchMousePosCoordFormat(coordinateDisplay)">
+          {{coordinateDisplay | translate}}
+        </a>
+      </li>
+    </ul>
   </div>
   <div id="toggle-fullscreen-border" class="map-btn-border" tooltip-append-to-body="true"
        tooltip-placement="left" tooltip="{{'toggle_fullscreen' | translate}}">

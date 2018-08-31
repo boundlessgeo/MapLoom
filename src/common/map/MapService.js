@@ -1036,7 +1036,7 @@
               serverId: server.id,
               name: minimalConfig.name,
               bbox: bbox,
-              title: fullConfig.title
+              title: fullConfig.Title || fullConfig.title
             },
             visible: minimalConfig.visibility,
             source: tilemapServiceSource
@@ -1060,7 +1060,7 @@
             serverId: server.id,
             name: minimalConfig.name,
             bbox: bbox,
-            title: fullConfig.Title
+            title: fullConfig.Title || fullConfig.title
           };
           // TODO: Should this portion be proxied?
           var attribution = new ol.Attribution({
@@ -1163,7 +1163,7 @@
           var proj;
 
           if (goog.isArray(fullConfig.BoundingBox)) {
-            bbox = {extent: fullConfig.BoundingBox[0]};
+            bbox = fullConfig.BoundingBox[0];
           } else if (goog.isArray(fullConfig.extent)) {
             bbox = {
               extent: fullConfig.extent,
@@ -1898,7 +1898,7 @@
       }
     };
 
-    this.switchMousePosCoordFormat = function() {
+    this.switchMousePosCoordFormat = function(newCoordinateDisplay) {
       var index;
       for (index = 0; index < this.map.getControls().getLength(); ++index) {
         if (this.map.getControls().getArray()[index] instanceof ol.control.MousePosition) {
@@ -1906,15 +1906,26 @@
         }
       }
 
-      if (settings.coordinateDisplay === coordinateDisplays.DMS) {
-        settings.coordinateDisplay = coordinateDisplays.DD;
+      // If a newCoordinateDisplay was NOT passed in, switch to the next one in a round robin.
+      // This is probably not necessary but wanted to maintain backwards compatibility.
+      if (_.isNil(newCoordinateDisplay)) {
+        if (settings.coordinateDisplay === coordinateDisplays.DMS) {
+          settings.coordinateDisplay = coordinateDisplays.DD;
+        } else if (settings.coordinateDisplay === coordinateDisplays.DD) {
+          settings.coordinateDisplay = coordinateDisplays.MGRS;
+        } else if (settings.coordinateDisplay === coordinateDisplays.MGRS) {
+          settings.coordinateDisplay = coordinateDisplays.DMS;
+        }
+      } else {
+        settings.coordinateDisplay = newCoordinateDisplay;
+      }
+
+      if (settings.coordinateDisplay === coordinateDisplays.DD) {
         var precision = settings.DDPrecision;
         this.map.getControls().getArray()[index].setCoordinateFormat(ol.coordinate.createStringXY(precision));
-      } else if (settings.coordinateDisplay === coordinateDisplays.DD) {
-        settings.coordinateDisplay = coordinateDisplays.MGRS;
-        this.map.getControls().getArray()[index].setCoordinateFormat(xyToMGRSFormat);
       } else if (settings.coordinateDisplay === coordinateDisplays.MGRS) {
-        settings.coordinateDisplay = coordinateDisplays.DMS;
+        this.map.getControls().getArray()[index].setCoordinateFormat(xyToMGRSFormat);
+      } else if (settings.coordinateDisplay === coordinateDisplays.DMS) {
         this.map.getControls().getArray()[index].setCoordinateFormat(ol.coordinate.toStringHDMS);
       }
     };

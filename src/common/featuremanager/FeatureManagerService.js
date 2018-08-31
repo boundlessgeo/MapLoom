@@ -392,6 +392,14 @@
               }
             }
           }
+
+          if (goog.isDefAndNotNull(selectedLayer_) && goog.isDefAndNotNull(selectedLayer_.get('exchangeMetadata')) &&
+              goog.isDefAndNotNull(selectedLayer_.get('exchangeMetadata').attributes)) {
+            props = _.sortBy(props, function(prop) {
+              return _.find(selectedLayer_.get('exchangeMetadata').attributes, { 'attribute': prop[0] }).display_order;
+            });
+          }
+
           selectedItemProperties_ = props;
           console.log('---- selectedItemProperties_: ', selectedItemProperties_);
 
