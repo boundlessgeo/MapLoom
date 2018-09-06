@@ -704,15 +704,15 @@
               return $http.get(layer.detail_url + '/get').then(function(response) {
                 var layer_def = response.data;
                 var servers = serverService.getServers();
+                var server_to_use = null;
 
-                var server_exists = false;
                 for (var i = 0, ii = servers.length; i < ii; i++) {
                   if (servers[i].url === layer_def.url) {
-                    server_exists = true;
+                    server_to_use = servers[i];
                   }
                 }
 
-                if (!server_exists) {
+                if (server_to_use === null) {
                   // this may not be the most stable method for getting
                   //  the server name.
                   var server_name = layer.detail_url.split('/layers/')[1].split(':')[0];
@@ -734,6 +734,10 @@
                     }
                     LayersService.addLayer(layer, server.id, server);
                   });
+                } else {
+                  layer.add = true;
+                  layer.name = layer.typename;
+                  LayersService.addLayer(layer, server_to_use.id, server_to_use);
                 }
               });
             };

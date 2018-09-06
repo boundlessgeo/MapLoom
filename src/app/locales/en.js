@@ -388,7 +388,9 @@
     'show_style_editor': 'Show Style Editor',
     'style_name': 'Style Name',
     'save_layer_style': 'Save Layer Style',
-    'refresh_interval': 'Refresh Interval'
+    'refresh_interval': 'Refresh Interval',
+    'share_this_map': 'Share Map',
+    'copy_to_clipboard': 'Copy to Clipboard'
   };
 
   var module = angular.module('loom_translations_en', ['pascalprecht.translate']);

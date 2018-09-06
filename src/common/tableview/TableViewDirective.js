@@ -178,6 +178,14 @@
               scope.currentPage = tableViewService.currentPage + 1;
               scope.totalPages = tableViewService.totalPages;
               scope.totalFeatures = tableViewService.totalFeatures;
+
+              _.forEach(scope.attributes, function(attribute) {
+                var exchangeAttributes = getExchangeMetadataAttribute(attribute.name);
+                if (exchangeAttributes.type && exchangeAttributes.options.length > 0) {
+                  scope.restrictions[attribute.name].type = 'simpleType';
+                  scope.restrictions[attribute.name].options = exchangeAttributes.options;
+                }
+              });
             };
 
             var clearSession = function() {

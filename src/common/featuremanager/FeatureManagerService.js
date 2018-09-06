@@ -392,6 +392,14 @@
               }
             }
           }
+
+          if (goog.isDefAndNotNull(selectedLayer_) && goog.isDefAndNotNull(selectedLayer_.get('exchangeMetadata')) &&
+              goog.isDefAndNotNull(selectedLayer_.get('exchangeMetadata').attributes)) {
+            props = _.sortBy(props, function(prop) {
+              return _.find(selectedLayer_.get('exchangeMetadata').attributes, { 'attribute': prop[0] }).display_order;
+            });
+          }
+
           selectedItemProperties_ = props;
           console.log('---- selectedItemProperties_: ', selectedItemProperties_);
 
@@ -1239,7 +1247,8 @@
     var layerUrl = selectedLayer_.get('metadata').url;
     var server = serverService_.getServerByUrl(selectedLayer_.get('metadata').url);
     var wfsurl = serverService_.getWfsRequestUrl(layerUrl);
-    var layerName = selectedLayer_.get('metadata').uniqueID;
+    var layerId = selectedLayer_.get('metadata').uniqueID;
+    var layerName = selectedLayer_.get('metadata').name;
     var wfsReqConfig = {
       headers: serverService_.getWfsRequestHeaders(server)
     };
@@ -1253,6 +1262,8 @@
       var json = x2js.xml_str2json(data);
       if (goog.isDefAndNotNull(json.WFS_TransactionResponse) &&
           goog.isDefAndNotNull(json.WFS_TransactionResponse.TransactionResult.Status.SUCCESS)) {
+        //Force bbox update in GS and then save the GN layer to fire the post save signals
+        httpService_.get('/layers/' + layerName + '/recalculate');
         if (postType === wfsPostTypes_.INSERT) {
           selectedItem_.id = json.WFS_TransactionResponse.InsertResult.FeatureId._fid;
           //Does this really need to be set? it doesn't seemed to be used anywhere.
@@ -1273,8 +1284,8 @@
         if (postType === wfsPostTypes_.DELETE) {
           service_.hide();
         }
-        historyService_.refreshHistory(layerName);
-        mapService_.dumpTileCache(layerName);
+        historyService_.refreshHistory(layerId);
+        mapService_.dumpTileCache(layerId);
         deferredResponse.resolve();
       } else if (goog.isDefAndNotNull(json.ExceptionReport) &&
           goog.isDefAndNotNull(json.ExceptionReport.Exception) &&

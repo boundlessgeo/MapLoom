@@ -380,7 +380,9 @@
     'style_layer_failed': 'Se ha producido un error desconocido al sincronizar {{ style_name }}.sld. Por favor, inténtelo de nuevo.',
     'save_layer_style': 'Save Layer Style',
     'show_style_editor': 'Show Style Editor',
-    'refresh_interval': 'Refresh Interval'
+    'refresh_interval': 'Refresh Interval',
+    'share_this_map': 'Compartir mapa',
+    'copy_to_clipboard': 'Copiar al portapapeles'
   };
 
   var module = angular.module('loom_translations_es', ['pascalprecht.translate']);

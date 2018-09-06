@@ -709,6 +709,27 @@
       var nameSplit = null;
       var url = null;
       var bbox;
+      // allow for a XYZ to be directly added to the map
+      if (minimalConfig.type === 'OpenLayers.Layer.XYZ' && minimalConfig.args[1].toString().indexOf('http') == 0) {
+        url = minimalConfig.args[1].toString();
+        layer = new ol.layer.Tile({
+          metadata: {
+            serverId: 'xyz',
+            name: minimalConfig.name,
+            title: minimalConfig.name
+          },
+          visible: minimalConfig.visibility,
+          source: new ol.source.XYZ({
+            url: url,
+            attributions: [
+              new ol.Attribution({
+                html: minimalConfig.args[2].attribution
+              })
+            ]
+          })
+        });
+        return layer;
+      }
       if (!goog.isDefAndNotNull(fullConfig)) {
         //dialogService_.error(translate_.instant('map_layers'), translate_.instant('load_layer_failed',
         //    {'layer': minimalConfig.name}), [translate_.instant('btn_ok')], false);
@@ -789,11 +810,11 @@
               return wms_url;
             };
           }
-
+          var mapproxyMostSpecificUrl = serverService_.getMostSpecificUrl(server);
           layer = new ol.layer.Tile({
             metadata: {
               name: minimalConfig.name,
-              url: goog.isDefAndNotNull(mostSpecificUrl) ? mostSpecificUrl : undefined,
+              url: goog.isDefAndNotNull(mapproxyMostSpecificUrl) ? mapproxyMostSpecificUrl : undefined,
               title: fullConfig.title,
               extent: fullConfig['extent'],
               abstract: fullConfig.abstract,
@@ -882,12 +903,12 @@
           }
           // This arc service does not support tiled maps, so this will
           // use the arc image service instead...
-          serviceSource = new ol.source.TileArcGISRest({
+          var tilemapServiceSource = new ol.source.TileArcGISRest({
             url: rest_url
           });
 
           // patch the web mercator projection.
-          serviceSource.tileUrlFunction = function(tileCoord, pixelRatio, projection) {
+          tilemapServiceSource.tileUrlFunction = function(tileCoord, pixelRatio, projection) {
             var rest_proj = projection;
             if (rest_proj.getCode() === 'EPSG:900913') {
               rest_proj = ol.proj.get('EPSG:3857');
@@ -914,10 +935,10 @@
               serverId: server.id,
               name: minimalConfig.name,
               bbox: bbox,
-              title: fullConfig.title
+              title: fullConfig.Title || fullConfig.title
             },
             visible: minimalConfig.visibility,
-            source: serviceSource
+            source: tilemapServiceSource
           });
         } else if (server.ptype === 'gxp_arcrestsource') {
           if (fullConfig.bbox_left) {
@@ -938,7 +959,7 @@
             serverId: server.id,
             name: minimalConfig.name,
             bbox: bbox,
-            title: fullConfig.Title
+            title: fullConfig.Title || fullConfig.title
           };
           var attribution = new ol.Attribution({
             html: 'Tiles &copy; <a href="' + server.url + '">ArcGIS</a>'
@@ -950,11 +971,11 @@
             url += '/';
           }
           var serviceUrl = url + 'tile/{z}/{y}/{x}';
-          var serviceSource = null;
+          var arcrestServiceSource = null;
           if (server.proj === 'EPSG:4326') {
             var projection = ol.proj.get('EPSG:4326');
             var tileSize = 512;
-            serviceSource = new ol.source.XYZ({
+            arcrestServiceSource = new ol.source.XYZ({
               attributions: [attribution],
               maxZoom: 19,
               projection: projection,
@@ -968,7 +989,7 @@
               wrapX: true
             });
           } else {
-            serviceSource = new ol.source.XYZ({
+            arcrestServiceSource = new ol.source.XYZ({
               attributions: [attribution],
               maxZoom: 19,
               metadata: metadata,
@@ -979,7 +1000,7 @@
           layer = new ol.layer.Tile({
             metadata: metadata,
             visible: minimalConfig.visibility,
-            source: serviceSource
+            source: arcrestServiceSource
           });
         } else if (server.ptype === 'gxp_tilejsonsource') {
           //currently we assume only one layer per 'server'
@@ -1021,7 +1042,7 @@
           nameSplit = (fullConfig.Name || fullConfig.name).split(':');
 
           // favor virtual service url when available
-          var mostSpecificUrl = server.url;
+          var wmscsourceMostSpecificUrl = server.url;
           var mostSpecificUrlWms = server.url;
           if (goog.isDefAndNotNull(server.isVirtualService) && server.isVirtualService === true) {
             mostSpecificUrlWms = server.virtualServiceUrl;
@@ -1031,12 +1052,12 @@
           if (goog.isDefAndNotNull(mostSpecificUrlWms)) {
             var urlIndex = mostSpecificUrlWms.lastIndexOf('/');
             if (urlIndex !== -1) {
-              mostSpecificUrl = mostSpecificUrlWms.slice(0, urlIndex);
+              wmscsourceMostSpecificUrl = mostSpecificUrlWms.slice(0, urlIndex);
             }
           }
 
           if (goog.isArray(fullConfig.BoundingBox)) {
-            bbox = {extent: fullConfig.BoundingBox[0]};
+            bbox = fullConfig.BoundingBox[0];
           } else if (goog.isArray(fullConfig.extent)) {
             bbox = {
               extent: fullConfig.extent,
@@ -1098,8 +1119,8 @@
             metadata: {
               serverId: server.id,
               name: minimalConfig.name,
-              url: goog.isDefAndNotNull(mostSpecificUrl) ? mostSpecificUrl : undefined,
-              title: fullConfig.Title,
+              url: goog.isDefAndNotNull(wmscsourceMostSpecificUrl) ? wmscsourceMostSpecificUrl : undefined,
+              title: fullConfig.Title || fullConfig.title,
               abstract: fullConfig.Abstract,
               keywords: fullConfig.KeywordList,
               workspace: nameSplit.length > 1 ? nameSplit[0] : '',
@@ -1116,7 +1137,7 @@
           });
 
           // Test if layer is read-only
-          if (goog.isDefAndNotNull(mostSpecificUrl)) {
+          if (goog.isDefAndNotNull(wmscsourceMostSpecificUrl)) {
             layer.get('metadata').readOnly = true;
             var testReadOnly = function() {
               var wfsRequestData = '<?xml version="1.0" encoding="UTF-8"?> ' +
@@ -1281,6 +1302,10 @@
           meta.layerOrder++;
         }
 
+        if (!_.isNil(meta.config.opacity)) {
+          layer.setOpacity(meta.config.opacity);
+        }
+
         var insertIndex = -1;
 
         for (var index = 0; index < mapLayers.length; index++) {
@@ -1373,6 +1398,7 @@
 
     // Update the map after save.
     this.updateMap = function(data) {
+      // Update the map id.
       service_.id = data.id;
       httpService_({
         method: 'POST',
@@ -1384,6 +1410,25 @@
           enabled: service_.commentsEnabled
         })
       });
+
+      // Update the browser's location if we can.
+      var _window = getRealWindow();
+      if (_window.history && _window.history.pushState && service_.id > 0) {
+        var location = _window.location;
+        // Make a relative link to the new map.
+        var url = '/maps/' + service_.id + '/view';
+        // Add the query search if it exists
+        if (!_.isNil(location.search) && !_.isEmpty(location.search)) {
+          url += location.search;
+        }
+        // Add the hash if it exists
+        if (!_.isNil(location.hash) && !_.isEmpty(location.hash)) {
+          url += location.hash;
+        }
+        // Push the new URL to the browser history. This will change the browser's location and back/forward buttons'
+        // history without reloading the page.
+        _window.history.pushState(null, null, url);
+      }
     };
 
     this.save = function(copy) {
@@ -1462,6 +1507,8 @@
         }
       }).success(function(data, status, headers, config) {
         service_.updateMap(data);
+        // Show the share map modal.
+        angular.element('#shareMap').modal('show');
       }).error(function(data, status, headers, config) {
         if (status == 403 || status == 401) {
           dialogService_.error(translate_.instant('save_failed'), translate_.instant('map_save_permission'));
@@ -1761,7 +1808,7 @@
       }
     };
 
-    this.switchMousePosCoordFormat = function() {
+    this.switchMousePosCoordFormat = function(newCoordinateDisplay) {
       var index;
       for (index = 0; index < this.map.getControls().getLength(); ++index) {
         if (this.map.getControls().getArray()[index] instanceof ol.control.MousePosition) {
@@ -1769,15 +1816,26 @@
         }
       }
 
-      if (settings.coordinateDisplay === coordinateDisplays.DMS) {
-        settings.coordinateDisplay = coordinateDisplays.DD;
+      // If a newCoordinateDisplay was NOT passed in, switch to the next one in a round robin.
+      // This is probably not necessary but wanted to maintain backwards compatibility.
+      if (_.isNil(newCoordinateDisplay)) {
+        if (settings.coordinateDisplay === coordinateDisplays.DMS) {
+          settings.coordinateDisplay = coordinateDisplays.DD;
+        } else if (settings.coordinateDisplay === coordinateDisplays.DD) {
+          settings.coordinateDisplay = coordinateDisplays.MGRS;
+        } else if (settings.coordinateDisplay === coordinateDisplays.MGRS) {
+          settings.coordinateDisplay = coordinateDisplays.DMS;
+        }
+      } else {
+        settings.coordinateDisplay = newCoordinateDisplay;
+      }
+
+      if (settings.coordinateDisplay === coordinateDisplays.DD) {
         var precision = settings.DDPrecision;
         this.map.getControls().getArray()[index].setCoordinateFormat(ol.coordinate.createStringXY(precision));
-      } else if (settings.coordinateDisplay === coordinateDisplays.DD) {
-        settings.coordinateDisplay = coordinateDisplays.MGRS;
-        this.map.getControls().getArray()[index].setCoordinateFormat(xyToMGRSFormat);
       } else if (settings.coordinateDisplay === coordinateDisplays.MGRS) {
-        settings.coordinateDisplay = coordinateDisplays.DMS;
+        this.map.getControls().getArray()[index].setCoordinateFormat(xyToMGRSFormat);
+      } else if (settings.coordinateDisplay === coordinateDisplays.DMS) {
         this.map.getControls().getArray()[index].setCoordinateFormat(ol.coordinate.toStringHDMS);
       }
     };
@@ -1803,6 +1861,10 @@
         return window.parent;
       }
       return window;
+    };
+
+    this.getCurrentURL = function() {
+      return getRealWindow().location.href;
     };
 
     /** Return a hash string for storing map information.

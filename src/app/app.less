@@ -38,11 +38,6 @@ html, body {
  	box-shadow: 0 1px 3px 0 rgba(0,0,0,.2),0 1px 1px 0 rgba(0,0,0,.14),0 2px 1px -1px rgba(0,0,0,.12);
 }
 
-.map-title-text {
-  width: 80%;
-  display: inline-block;
-}
-
 #pulldown-content .panel-heading {
 	background-color: @mainHeaderColor;
 	color: @mainHeaderFontColor;
@@ -183,22 +178,38 @@ hr {
   .panel-heading{
     font-size: 20px;
     font-weight: 100;
-    padding-bottom: 2px;
+    padding-bottom: 7px;
   }
 
-   i{
+  i{
     color: @saveIconColor;
     cursor: pointer;
   }
 
+  #map-name {
+    display: flex;
+    flex-wrap: nowrap;
+
+    .map-title-text {
+      flex-grow: 1;
+    }
+    i {
+      flex-grow: 0;
+      flex-shrink: 0;
+      padding-left: 7px;
+    }
+  }
+
   #saveButton:before{
     content: @saveIcon;
-    padding-left: 5px;
   }
   #refreshButton:before{
     content: @refreshIcon;
-    padding: 2px;
   }
+}
+
+#mapLink {
+  cursor: text;
 }
 
 .refreshing-map {
@@ -343,5 +354,21 @@ textarea {
 
   .modal-footer {
     border-top: none;
+  }
+}
+
+.switch-coords.selectable {
+  li > a {
+    padding-left: 27px;
+  }
+
+  li.selected > a {
+    padding-left: 5px;
+
+    &::before {
+      padding-right: 5px;
+      font-family: 'Glyphicons Halflings';
+      content: "\e013";
+    }
   }
 }

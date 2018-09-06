@@ -180,11 +180,14 @@
         <div class="panel-heading">
           <em id="map-name">
             <div class="map-title-text ellipsis">{{ mapService.getTitle() }}</div>
-            <i id="saveButton" class="glyphicon pull-right" data-target="#saveMap" ng-show="configService.admin"
+            <i id="refreshButton" class="glyphicon" ng-click="refreshService.refreshLayers()"
+               tooltip-placement="bottom" tooltip="{{'refresh_layers' | translate}}" tooltip-append-to-body="true"></i>
+            <i id="saveButton" class="glyphicon" data-target="#saveMap" ng-show="configService.admin"
                tooltip-placement="bottom" tooltip="{{'save_this_map' | translate}}" tooltip-append-to-body="true"
                ng-class="{'hide': !configService.username}" data-toggle="modal"></i>
-            <i id="refreshButton" class="glyphicon pull-right" ng-click="refreshService.refreshLayers()"
-               tooltip-placement="bottom" tooltip="{{'refresh_layers' | translate}}" tooltip-append-to-body="true"></i>
+            <i id="shareButton" class="glyphicon glyphicon-share-alt" data-target="#shareMap"
+               ng-if="mapService.id > 0"
+               tooltip-placement="bottom" tooltip="{{'share_this_map' | translate}}" tooltip-append-to-body="true" data-toggle="modal"></i>
           </em>
           <!--<span ng-class="{'hidden': !notificationsPanel}" class="loom-notification-badge pull-right"></span>-->
         </div>
@@ -334,11 +337,18 @@
       <i class="glyphicon glyphicon-globe"></i>
     </div>
   </div>
-  <div id="switch-coords-border" class="map-btn-border" tooltip-append-to-body="true"
+  <div id="switch-coords-border" class="map-btn-border btn-group dropup" tooltip-append-to-body="true"
        tooltip-placement="right" tooltip="{{'switch_coords' | translate}}">
-    <div id="switch-coords" ng-click="mapService.switchMousePosCoordFormat()">
+    <button id="switch-coords" class="btn btn-default"  data-toggle="dropdown">
       <i class="glyphicon glyphicon-map-marker"></i>
-    </div>
+    </button>
+    <ul class="switch-coords dropdown-menu selectable">
+      <li ng-repeat="coordinateDisplay in coordinateDisplays" ng-class="{ selected: settings.coordinateDisplay === coordinateDisplay }">
+        <a ng-click="mapService.switchMousePosCoordFormat(coordinateDisplay)">
+          {{coordinateDisplay | translate}}
+        </a>
+      </li>
+    </ul>
   </div>
   <div id="toggle-fullscreen-border" class="map-btn-border" tooltip-append-to-body="true"
        tooltip-placement="left" tooltip="{{'toggle_fullscreen' | translate}}">
@@ -429,6 +439,10 @@
 </div>
 <div loom-modal id="saveMap" modal-title="{{ 'save_this_map' | translate}}">
     <div loom-save-map id="save-map">
+    </div>
+</div>
+<div loom-modal id="shareMap" modal-title="{{ 'share_this_map' | translate}}">
+    <div loom-share-map id="share-map">
     </div>
 </div>
 <div loom-modal id="enter-spatial-filter-radius-dialog" modal-title="{{'enter_radius' | translate}}">

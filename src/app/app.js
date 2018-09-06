@@ -11,7 +11,8 @@
     'loom_translations_en',
     'loom_translations_es',
     'xeditable',
-    'ngFileSaver'
+    'ngFileSaver',
+    'ngclipboard'
   ]);
 
   module.run(function run(editableOptions) {
@@ -67,6 +68,15 @@
 
         $scope.mapService = mapService;
         $scope.refreshService = refreshService;
+        $scope.settings = settings;
+        // Get a list of available coordinate display types and add it to the scope.
+        $scope.coordinateDisplays = _.chain(coordinateDisplays)
+            .values()
+            // Ignore the 'other' because I have no idea what it is for.
+            .reject(function(coordinateDisplay) {
+              return coordinateDisplay === 'other';
+            })
+            .value();
       });
 
   module.provider('debugService', function() {
@@ -93,6 +103,8 @@
   });
 
   module.config(function($translateProvider) {
-    $translateProvider.preferredLanguage('en');
+    $translateProvider
+      .fallbackLanguage('en')
+      .preferredLanguage('en');
   });
 }());

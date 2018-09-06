@@ -1,7 +1,7 @@
 {
   "author": "Prominent Edge",
   "name": "MapLoom",
-  "version": "1.5.134",
+  "version": "1.5.135",
   "homepage": "http://www.prominentedge.com",
   "licenses": {
     "type": "BSD",
@@ -16,7 +16,7 @@
     "test": "grunt karma"
   },
   "devDependencies": {
-    "@boundlessgeo/storytools": "^1.0.0-alpha9",
+    "@boundlessgeo/storytools": "^1.0.0-alpha11",
     "closure-linter-wrapper": "~0.2.8",
     "grunt": "~0.4.1",
     "grunt-bump": "0.0.7",
@@ -26,7 +26,7 @@
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-connect": "^1.0.2",
     "grunt-contrib-copy": "~0.4.1",
-    "grunt-contrib-jshint": "~0.4.3",
+    "grunt-contrib-jshint": "~1.1.0",
     "grunt-contrib-uglify": "~0.2.0",
     "grunt-contrib-watch": "~0.4.0",
     "grunt-conventional-changelog": "~0.1.1",
