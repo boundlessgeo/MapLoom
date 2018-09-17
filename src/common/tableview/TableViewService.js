@@ -56,6 +56,7 @@
     };
 
     this.showTable = function(layer, feature) {
+      console.log('show table', layer, feature);
       service_.rows = [];
       service_.attributeNameList = [];
       service_.restrictionList = {};
@@ -451,12 +452,15 @@
           return metadata.schema[prop.name].visible;
         });
         // Use the Exchange metadata display_order if it exists
-        if (!_.isNil(service_.selectedLayer) && !_.isNil(service_.selectedLayer.get('exchangeMetadata')) &&
-            !_.isNil(service_.selectedLayer.get('exchangeMetadata').attributes)) {
-          service_.attributeNameList = _.sortBy(service_.attributeNameList, function(prop) {
-            return _.find(service_.selectedLayer.get('exchangeMetadata').attributes, { 'attribute': prop.name }).display_order;
-          });
+        try {
+          if (!_.isNil(service_.selectedLayer) && !_.isNil(service_.selectedLayer.get('exchangeMetadata')) &&
+              !_.isNil(service_.selectedLayer.get('exchangeMetadata').attributes)) {
+            service_.attributeNameList = _.sortBy(service_.attributeNameList, function(prop) {
+              return _.find(service_.selectedLayer.get('exchangeMetadata').attributes, { 'attribute': prop.name }).display_order;
+            });
+          }
         }
+        catch (err) {}
         service_.totalFeatures = data.totalFeatures;
         service_.totalPages = Math.ceil(service_.totalFeatures / service_.resultsPerPage);
         getRestrictions();

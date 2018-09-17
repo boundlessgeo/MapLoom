@@ -60,29 +60,32 @@
               }
 
               var selectedLayer = featureManagerService.getSelectedLayer();
-              if (goog.isDefAndNotNull(selectedLayer) && goog.isDefAndNotNull(selectedLayer.get('exchangeMetadata')) &&
-                  goog.isDefAndNotNull(selectedLayer.get('exchangeMetadata').attributes)) {
-                scope.properties = _.sortBy(scope.properties, function(prop) {
-                  return _.find(selectedLayer.get('exchangeMetadata').attributes, { 'attribute': prop[0] }).display_order;
-                });
-                _.chain(selectedLayer.get('exchangeMetadata').attributes)
-                    .filter(function(attribute) {
-                      return _.isArray(attribute.options) && !_.isEmpty(attribute.options);
-                    })
-                    .each(function(attribute) {
-                      var property = _.find(scope.properties, { 0: attribute.attribute });
-                      if (property) {
-                        property.type = 'simpleType';
-                        property.enum = _.map(attribute.options, function(option) {
-                          return {
-                            _value: option.value,
-                            _label: option.value + ' - ' + option.label
-                          };
-                        });
-                      }
-                    })
-                    .commit();
+              try {
+                if (goog.isDefAndNotNull(selectedLayer) && goog.isDefAndNotNull(selectedLayer.get('exchangeMetadata')) &&
+                    goog.isDefAndNotNull(selectedLayer.get('exchangeMetadata').attributes)) {
+                  scope.properties = _.sortBy(scope.properties, function(prop) {
+                    return _.find(selectedLayer.get('exchangeMetadata').attributes, { 'attribute': prop[0] }).display_order;
+                  });
+                  _.chain(selectedLayer.get('exchangeMetadata').attributes)
+                      .filter(function(attribute) {
+                        return _.isArray(attribute.options) && !_.isEmpty(attribute.options);
+                      })
+                      .each(function(attribute) {
+                        var property = _.find(scope.properties, { 0: attribute.attribute });
+                        if (property) {
+                          property.type = 'simpleType';
+                          property.enum = _.map(attribute.options, function(option) {
+                            return {
+                              _value: option.value,
+                              _label: option.value + ' - ' + option.label
+                            };
+                          });
+                        }
+                      })
+                      .commit();
+                }
               }
+              catch (err) {}
 
               if (geometry.type.toLowerCase() == 'point') {
                 if (projection === 'EPSG:4326') {

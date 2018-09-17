@@ -654,28 +654,31 @@
         properties[propertyIndex].editable = editable;
       }
     }
-    if (!_.isNil(service_.layer.get('exchangeMetadata')) &&
-        !_.isNil(service_.layer.get('exchangeMetadata').attributes) &&
-        !_.isEmpty(service_.layer.get('exchangeMetadata').attributes)) {
-      properties = _.chain(properties)
-          .sortBy(function(attr) {
-            return _.find(service_.layer.get('exchangeMetadata').attributes, { 'attribute': attr.attributename }).display_order;
-          })
-          .map(function(attr) {
-            var exchangeAttribute = _.find(service_.layer.get('exchangeMetadata').attributes, { 'attribute': attr.attributename });
-            if (!_.isNil(exchangeAttribute) && _.isArray(exchangeAttribute.options) && !_.isEmpty(exchangeAttribute.options)) {
-              attr.type = 'simpleType';
-              attr.enum = _.map(exchangeAttribute.options, function(option) {
-                return {
-                  _value: option.value,
-                  _label: option.value + ' - ' + option.label
-                };
-              });
-            }
-            return attr;
-          })
-          .value();
+    try {
+      if (!_.isNil(service_.layer.get('exchangeMetadata')) &&
+          !_.isNil(service_.layer.get('exchangeMetadata').attributes) &&
+          !_.isEmpty(service_.layer.get('exchangeMetadata').attributes)) {
+        properties = _.chain(properties)
+            .sortBy(function(attr) {
+              return _.find(service_.layer.get('exchangeMetadata').attributes, { 'attribute': attr.attributename }).display_order;
+            })
+            .map(function(attr) {
+              var exchangeAttribute = _.find(service_.layer.get('exchangeMetadata').attributes, { 'attribute': attr.attributename });
+              if (!_.isNil(exchangeAttribute) && _.isArray(exchangeAttribute.options) && !_.isEmpty(exchangeAttribute.options)) {
+                attr.type = 'simpleType';
+                attr.enum = _.map(exchangeAttribute.options, function(option) {
+                  return {
+                    _value: option.value,
+                    _label: option.value + ' - ' + option.label
+                  };
+                });
+              }
+              return attr;
+            })
+            .value();
+      }
     }
+    catch (err) {}
     return properties;
   }
 
