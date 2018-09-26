@@ -423,7 +423,9 @@
       if (service_.layerIsEditable(layer)) {
         var layerTypeName = layer.get('metadata').name;
         var url = layer.get('metadata').url + '/wps?version=' + settings.WPSVersion;
-
+        if (configService_.accessToken) {
+          url += '&access_token=' + configService_.accessToken;
+        }
         var wpsPostData = '' +
             '<?xml version="1.0" encoding="UTF-8"?><wps:Execute version="' + settings.WPSVersion + '" service="WPS" ' +
                 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
