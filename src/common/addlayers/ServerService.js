@@ -758,7 +758,6 @@ var SERVER_SERVICE_USE_PROXY = true;
       } catch (err) {
         // swallow the error for the 'undefined' server Id.
       }
-
       return {
         add: true,
         Abstract: layerInfo.abstract,
@@ -1067,7 +1066,9 @@ var SERVER_SERVICE_USE_PROXY = true;
         if (server.isVirtualService === true) {
           url = server.virtualServiceUrl;
         }
-
+        if (configService_.accessToken) {
+          url += '?access_token=' + configService_.accessToken;
+        }
         var iqm = url.indexOf('?');
         var url_getcaps = url + (iqm >= 0 ? (iqm - 1 == url.length ? '' : '&') : '?') + 'SERVICE=WMS&REQUEST=GetCapabilities';
 
