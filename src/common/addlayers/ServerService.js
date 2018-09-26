@@ -233,7 +233,11 @@ var SERVER_SERVICE_USE_PROXY = true;
       var currentDomain = locationService_.host();
       if (goog.isDefAndNotNull(url)) {
         if (url.indexOf(currentDomain) >= 0 && url.indexOf('geoserver') > 0) {
-          return '/geoserver/wfs';
+          var _wfsurl = '/geoserver/wfs';
+          if (configService_.accessToken) {
+            _wfsurl += '?access_token=' + configService_.accessToken;
+          }
+          return _wfsurl;
         } else if (url.indexOf(currentDomain) > -1) {
           wfsurl = location.protocol + '//' + location.host + '/wfsproxy/';
           return wfsurl;
