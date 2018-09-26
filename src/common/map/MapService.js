@@ -1075,6 +1075,9 @@
             'LAYERS': fullConfig.typeName || minimalConfig.name,
             'tiled': 'true'
           };
+          if (configService_.accessToken) {
+            source_params['access_token'] = configService_.accessToken;
+          }
 
           if (server.version !== undefined) {
             source_params['VERSION'] = server.version;
