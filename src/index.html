@@ -114,6 +114,11 @@
         localCSWBaseUrl: trimUrl("{{ CATALOGUE_BASE_URL }}"),
         catalogList: "{{ CATALOGLIST }}",
         csrfToken: "{{ csrf_token }}",
+        {% if 'access_token' in request.session %}
+          accessToken:"{{request.session.access_token}}",
+        {% else %}
+          accessToken:"",
+        {% endif %}
         tools: [{ptype: "gxp_getfeedfeatureinfo"}],
         registryEnabled: registryEnabled(),
         stylingEnabled: stylingEnabled(),
