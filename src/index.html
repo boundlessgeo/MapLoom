@@ -458,5 +458,14 @@
 <% if (!(typeof django === 'undefined') && (django)) { %>
 {% endverbatim %}
 <% } %>
+<script>
+  // hide save map button if user is not a content creator
+  if ('{{ perms.maps.add_map }}' != 'True') {
+      // staff and superusers should be able to regardless
+      if ('{{ user.is_staff }}' != 'True' && '{{ user.is_superuser }}' != 'True') {
+          $('#saveButton').css('visibility', 'hidden');
+      }
+  }
+</script>
 </body>
 </html>
