@@ -345,7 +345,6 @@
         var pan = ol.animation.pan({source: map.getView().getCenter()});
         map.beforeRender(pan, zoom);
       }
-
       view.fit(extent, map.getSize());
     };
 
@@ -423,7 +422,13 @@
       if (service_.layerIsEditable(layer)) {
         var layerTypeName = layer.get('metadata').name;
         var url = layer.get('metadata').url + '/wps?version=' + settings.WPSVersion;
-
+        var workspace = layer.get('metadata').workspace;
+        if (layerTypeName.indexOf(':') > -1) {
+          var typeNameArr = layerTypeName.split(':');
+          if (typeNameArr.length > 0) {
+            workspace = typeNameArr[0];
+          }
+        }
         var wpsPostData = '' +
             '<?xml version="1.0" encoding="UTF-8"?><wps:Execute version="' + settings.WPSVersion + '" service="WPS" ' +
                 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
@@ -442,7 +447,7 @@
             '<wps:Reference mimeType="text/xml" xlink:href="http://geoserver/wfs" method="POST">' +
             '<wps:Body>' +
             '<wfs:GetFeature service="WFS" version="' + settings.WFSVersion + '" outputFormat="GML2" ' +
-                'xmlns:' + layer.get('metadata').workspace + '="' + layer.get('metadata').workspaceURL + '">' +
+                'xmlns:' + workspace + '="' + layer.get('metadata').workspaceURL + '">' +
             '<wfs:Query typeName="' + layerTypeName + '"/>' +
             '</wfs:GetFeature>' +
             '</wps:Body>' +
@@ -1439,7 +1444,9 @@
         projection: configService_.configuration.map.projection,
         maxZoom: 17
       };
-
+      // var mapCenter = ol.proj.transform(configService_.configuration.map.center, params.projection, 'EPSG:4326');
+      console.log('>>>>>', configService_.configuration);
+      // console.log(mapCenter);
       var default_view = {
         center: configService_.configuration.map.center,
         zoom: configService_.configuration.map.zoom
