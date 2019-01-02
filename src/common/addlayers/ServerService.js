@@ -232,11 +232,13 @@ var SERVER_SERVICE_USE_PROXY = true;
       url = goog.isDefAndNotNull(server) ? service_.getMostSpecificUrl(server) : url;
       var currentDomain = locationService_.host();
       if (goog.isDefAndNotNull(url)) {
-        if (url.indexOf(currentDomain) >= 0 && url.indexOf('geoserver') > 0) {
+        if (url.indexOf(currentDomain) >= 0 && url.indexOf('geoserver/') > 0) {
           return '/geoserver/wfs';
         } else if (url.indexOf(currentDomain) > -1) {
           wfsurl = location.protocol + '//' + location.host + '/wfsproxy/';
           return wfsurl;
+        } else if (url.indexOf('/ows') > -1) {
+          return url.replace('ows', 'wfs');
         }
       }
       wfsurl = url + '/wfs/WfsDispatcher';
