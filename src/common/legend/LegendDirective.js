@@ -135,7 +135,7 @@
                 uri.setParameterValue(key, params[key]);
               }
               // kick back the URL as a formatted string.
-              return uri.toString();
+              return uri.toString().replace('ows', 'wms');
             };
 
             scope.$on('layer-added', function() {
