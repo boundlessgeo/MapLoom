@@ -410,19 +410,42 @@
       }
       return deferredResponse.promise;
     };
-
+    this.getLayerExtentFromConfig = function(layer) {
+      var layerMetadata = layer.get('metadata');
+      var targetExtent = null;
+      if (typeof layerMetadata.bbox !== 'undefined' && layerMetadata.bbox) {
+        try {
+          targetExtent = layerMetadata.bbox.extent;
+          var mapProjection = service_.map.getView().getProjection();
+          var layerProjection = ol.proj.get(layerMetadata.bbox.crs);
+          if (layerProjection !== mapProjection) {
+            var transform = ol.proj.getTransformFromProjections(layerProjection, mapProjection);
+            targetExtent = ol.extent.applyTransform(targetExtent, transform);
+          }
+        } catch (err) {
+          console.error(err);
+          console.warn('Cannot layer projection info in metadata fallback to wps');
+        }
+      }
+      return targetExtent;
+    };
     this.zoomToLayerFeatures = function(layer) {
       var deferredResponse = q_.defer();
-
       if (!goog.isDefAndNotNull(layer)) {
         deferredResponse.resolve();
         return deferredResponse.promise;
       }
-
+      var layerMetadata = layer.get('metadata');
+      var configExtent = service_.getLayerExtentFromConfig(layer);
+      if (configExtent) {
+        service_.zoomToExtent(configExtent);
+        deferredResponse.resolve();
+        return deferredResponse.promise;
+      }
       if (service_.layerIsEditable(layer)) {
-        var layerTypeName = layer.get('metadata').name;
-        var url = layer.get('metadata').url + '/wps?version=' + settings.WPSVersion;
-        var workspace = layer.get('metadata').workspace;
+        var layerTypeName = layerMetadata.name;
+        var url = layerMetadata.url + '/wps?version=' + settings.WPSVersion;
+        var workspace = layerMetadata.workspace;
         if (layerTypeName.indexOf(':') > -1) {
           var typeNameArr = layerTypeName.split(':');
           if (typeNameArr.length > 0) {
@@ -447,7 +470,7 @@
             '<wps:Reference mimeType="text/xml" xlink:href="http://geoserver/wfs" method="POST">' +
             '<wps:Body>' +
             '<wfs:GetFeature service="WFS" version="' + settings.WFSVersion + '" outputFormat="GML2" ' +
-                'xmlns:' + workspace + '="' + layer.get('metadata').workspaceURL + '">' +
+                'xmlns:' + workspace + '="' + layerMetadata.workspaceURL + '">' +
             '<wfs:Query typeName="' + layerTypeName + '"/>' +
             '</wfs:GetFeature>' +
             '</wps:Body>' +
@@ -476,10 +499,22 @@
                         JSON.parse(lower[1], 10),
                         JSON.parse(upper[0], 10),
                         JSON.parse(upper[1], 10)];
-          var transform = ol.proj.getTransformFromProjections(ol.proj.get(layer.get('metadata').projection),
-              ol.proj.get(service_.map.getView().getProjection()));
-          var extent900913 = ol.extent.applyTransform(bounds, transform);
-          service_.zoomToExtent(extent900913, null, null, 0.1);
+          var targetExtent = bounds;
+          var layerProjectionCode = layerMetadata.projection;
+          if (layerMetadata.config && layerMetadata.config.crs) {
+            var configCRS = layerMetadata.config.crs;
+            if (configCRS.type === 'name') {
+              layerProjectionCode = configCRS.properties;
+            }
+            // TODO: handle config CRS type
+          }
+          var mapProjection = service_.map.getView().getProjection();
+          var mapProjectionCode = mapProjection.getCode();
+          if (layerProjectionCode !== mapProjectionCode) {
+            var transform = ol.proj.getTransformFromProjections(ol.proj.get(layerProjectionCode), ol.proj.get(mapProjectionCode));
+            targetExtent = ol.extent.applyTransform(targetExtent, transform);
+          }
+          service_.zoomToExtent(targetExtent, null, null, 0.1);
           deferredResponse.resolve();
         }).error(function(data, status, headers, config) {
           service_.zoomToLayerExtent(layer);
@@ -514,13 +549,13 @@
           newExtent[2] -= xDelta;
           newExtent[3] -= yDelta;
         }
-
-        // Create transform and project to current map
-        var transform = ol.proj.getTransformFromProjections(ol.proj.get(layer_crs),
-            service_.map.getView().getProjection());
-
-        newExtent = ol.extent.applyTransform(newExtent, transform);
-
+        var mapProjection = service_.map.getView().getProjection();
+        var mapProjectionCode = mapProjection.getCode();
+        if (layer_crs !== mapProjectionCode) {
+          // Create transform and project to current map
+          var transform = ol.proj.getTransformFromProjections(ol.proj.get(layer_crs), service_.map.getView().getProjection());
+          newExtent = ol.extent.applyTransform(newExtent, transform);
+        }
         return newExtent;
       };
 
