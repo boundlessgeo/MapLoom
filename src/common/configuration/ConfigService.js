@@ -116,6 +116,7 @@
         fileserviceUrlTemplate: '/api/fileservice/view/{}',
         fileserviceUploadUrl: '/api/fileservice/',
         registryEnabled: true,
+        accessToken: null,
         searchEnabled: true,
         nominatimSearchEnabled: false,
         geoquerySearchEnabled: false,
@@ -145,6 +146,7 @@
       this.user_profile_name = this.configuration.userprofilename;
       this.user_profile_email = this.configuration.userprofileemail;
       this.user_name = this.configuration.username;
+      this.accessToken = this.configuration.accessToken;
       this.proxy = this.configuration.proxy;
       this.csrfToken = $cookies.csrftoken;
 

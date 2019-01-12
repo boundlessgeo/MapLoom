@@ -427,6 +427,7 @@ var SERVER_SERVICE_USE_PROXY = true;
           }
         } else {
           server.username = configService_.username;
+          server.accessToken = configService_.accessToken;
           server.isLocal = true;
 
           if (server.isVirtualService === true) {

@@ -90,6 +90,11 @@
     config =  {
         authStatus: {% if user.is_authenticated %} 200{% else %} 401{% endif %},
         username: {% if user.is_authenticated %} "{{ user.username }}" {% else %} undefined {% endif %},
+        {% if 'access_token' in request.session %}
+        accessToken : "{{request.session.access_token}}",
+        {% else %}
+        accessToken : null,
+        {% endif %}
         currentLanguage: "{{language|default:'en'}}",
         userprofilename: {% if user.is_authenticated %} "{{ user.get_full_name }}" {% else %} undefined {% endif %},
         userprofileemail: {% if user.is_authenticated %} "{{ user.email }}" {% else %} undefined {% endif %},
