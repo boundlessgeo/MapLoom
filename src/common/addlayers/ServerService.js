@@ -176,8 +176,9 @@ var SERVER_SERVICE_USE_PROXY = true;
         });
       }
       for (var index = 0; index < servers.length; index += 1) {
-        if (servers[index].name.toLocaleLowerCase() === name.toLowerCase()) {
-          server = servers[index];
+        var currentServer = servers[index];
+        if (typeof currentServer.name !== 'undefined' && currentServer.name.toLocaleLowerCase() === name.toLowerCase()) {
+          server = currentServer;
           break;
         }
       }
