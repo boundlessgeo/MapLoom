@@ -1442,7 +1442,10 @@
     this.getMapViewParams = function() {
       var params = {
         projection: configService_.configuration.map.projection,
-        maxZoom: 17
+        maxZoom: 17,
+        zoom: configService_.configuration.map.zoom,
+        maxResolution: configService_.configuration.map.maxResolution,
+        extent: configService_.configuration.map.maxExtent
       };
       // var mapCenter = ol.proj.transform(configService_.configuration.map.center, params.projection, 'EPSG:4326');
       console.log('>>>>>', configService_.configuration);
@@ -1456,14 +1459,14 @@
       //  unless the map already has one defined.
       var hash_view = getHashView(getRealWindow().location.hash, default_view);
       goog.object.extend(params, hash_view);
-
-      if (configService_.configuration.map.projection === 'EPSG:4326') {
-        params['extent'] = [-180.0000, -90.0000, 180.0000, 90.0000];
-        params['minZoom'] = 3;
-      } else {
-        params['extent'] = [-20026376.39, -20048966.10, 20026376.39, 20048966.10];
-        params['maxResolution'] = 40075016.68557849 / 2048;
-      }
+      //NOTE: I don't why we add the following params as hard coded values
+      // if (configService_.configuration.map.projection === 'EPSG:4326') {
+      //   params['extent'] = [-180.0000, -90.0000, 180.0000, 90.0000];
+      //   params['minZoom'] = 3;
+      // } else {
+      //   params['extent'] = [-20026376.39, -20048966.10, 20026376.39, 20048966.10];
+      //   params['maxResolution'] = 40075016.68557849 / 2048;
+      // }
       return params;
     };
 
