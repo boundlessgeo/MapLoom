@@ -275,7 +275,7 @@
       }
 
       var typeName = metadata.name;
-      if (!typeName.startsWith(metadata.workspace + ':')) {
+      if (typeName.indexOf(':') === -1) {
         typeName = metadata.workspace + ':' + metadata.name;
       }
 

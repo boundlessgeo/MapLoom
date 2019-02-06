@@ -176,8 +176,9 @@ var SERVER_SERVICE_USE_PROXY = true;
         });
       }
       for (var index = 0; index < servers.length; index += 1) {
-        if (servers[index].name.toLocaleLowerCase() === name.toLowerCase()) {
-          server = servers[index];
+        var currentServer = servers[index];
+        if (typeof currentServer.name !== 'undefined' && currentServer.name.toLocaleLowerCase() === name.toLowerCase()) {
+          server = currentServer;
           break;
         }
       }
@@ -232,11 +233,13 @@ var SERVER_SERVICE_USE_PROXY = true;
       url = goog.isDefAndNotNull(server) ? service_.getMostSpecificUrl(server) : url;
       var currentDomain = locationService_.host();
       if (goog.isDefAndNotNull(url)) {
-        if (url.indexOf(currentDomain) >= 0 && url.indexOf('geoserver') > 0) {
+        if (url.indexOf(currentDomain) >= 0 && url.indexOf('geoserver/') > 0) {
           return '/geoserver/wfs';
         } else if (url.indexOf(currentDomain) > -1) {
           wfsurl = location.protocol + '//' + location.host + '/wfsproxy/';
           return wfsurl;
+        } else if (url.indexOf('/ows') > -1) {
+          return url.replace('ows', 'wfs');
         }
       }
       wfsurl = url + '/wfs/WfsDispatcher';
@@ -424,6 +427,7 @@ var SERVER_SERVICE_USE_PROXY = true;
           }
         } else {
           server.username = configService_.username;
+          server.accessToken = configService_.accessToken;
           server.isLocal = true;
 
           if (server.isVirtualService === true) {
