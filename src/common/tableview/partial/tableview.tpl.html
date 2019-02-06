@@ -61,7 +61,7 @@
                     e-style="width:160px">{{row.feature.properties[attr.name]}}</span>
               <span ng-switch-when="double" editable-text="row.feature.properties[attr.name]" e-form="tableviewform"
                     e-style="width:160px">{{row.feature.properties[attr.name]}}</span>
-              <div ng-switch-when="datetime">
+              <!-- <div ng-switch-when="datetime">
                   <span ng-if="!tableviewform.$visible">{{row.feature.properties[attr.name] | date:"MM/dd/yyyy @ h:mm a"}}</span>
                   <datetimepicker ng-if="tableviewform.$visible" id="table-datetime" date-object="row.feature.properties[attr.name]"
                         default-date="false" seperate-time="false"></datetimepicker>
@@ -75,7 +75,13 @@
                     <span ng-if="!tableviewform.$visible">{{row.feature.properties[attr.name] | date:"h:mm a"}}</span>
                     <datetimepicker ng-if="tableviewform.$visible" id="table-datetime" date-object="row.feature.properties[attr.name]"
                                     default-date="false" seperate-time="false" date="false"></datetimepicker>
-                </div>
+                </div> -->
+                <span ng-switch-when="date" editable-text="row.feature.properties[attr.name]" e-form="tableviewform"
+                e-style="width:160px">{{row.feature.properties[attr.name]}}</span>
+                <span ng-switch-when="datetime" editable-text="row.feature.properties[attr.name]" e-form="tableviewform"
+                e-style="width:160px">{{row.feature.properties[attr.name]}}</span>
+                <span ng-switch-when="time" editable-text="row.feature.properties[attr.name]" e-form="tableviewform"
+                e-style="width:160px">{{row.feature.properties[attr.name]}}</span>
                 <div ng-switch-when="simpleType" ng-class="{'has-error': !prop.valid}">
                     <select ng-model="row.feature.properties[attr.name]" ng-options="enum._value as (enum._label) ? enum._label : enum._value for enum in prop.enum" class="form-control">
                         <option></option>
