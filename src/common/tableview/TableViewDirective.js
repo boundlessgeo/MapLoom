@@ -181,7 +181,7 @@
 
               _.forEach(scope.attributes, function(attribute) {
                 var exchangeAttributes = getExchangeMetadataAttribute(attribute.name);
-                if (exchangeAttributes.type && exchangeAttributes.options.length > 0) {
+                if (goog.isDefAndNotNull(exchangeAttributes) && exchangeAttributes.type && exchangeAttributes.options.length > 0) {
                   scope.restrictions[attribute.name].type = 'simpleType';
                   scope.restrictions[attribute.name].options = exchangeAttributes.options;
                 }
